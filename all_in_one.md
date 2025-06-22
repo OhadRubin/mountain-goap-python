@@ -1,95 +1,7 @@
-
-I will provide the Python equivalent of each C# file, preserving the structure and variable names as much as possible. Since Python is dynamically typed and doesn't have direct equivalents for some C# features (like `ConcurrentDictionary` with exactly the same semantics, or `MethodImplOptions.AggressiveInlining`), I will use the closest Pythonic alternatives. For `ConcurrentDictionary`, a standard `dict` will be used, and for `FastPriorityQueue`, I'll use a basic list-based min-heap implementation as a stand-in, as a direct verbatim translation of that C# library is quite extensive and beyond the scope of a direct port.
-
-Let's start with the directory structure:
-
-```
-.
-├── MountainGoap
-│   ├── Action.py
-│   ├── Agent.py
-│   ├── BaseGoal.py
-│   ├── CallbackDelegates
-│   │   ├── CostCallback.py
-│   │   ├── ExecutorCallback.py
-│   │   ├── PermutationSelectorCallback.py
-│   │   ├── SensorRunCallback.py
-│   │   ├── StateCheckerCallback.py
-│   │   ├── StateCostDeltaMultiplierCallback.py
-│   │   └── StateMutatorCallback.py
-│   ├── ComparativeGoal.py
-│   ├── ComparisonOperator.py
-│   ├── ComparisonValuePair.py
-│   ├── Events
-│   │   ├── AgentActionSequenceCompletedEvent.py
-│   │   ├── AgentStepEvent.py
-│   │   ├── BeginExecuteActionEvent.py
-│   │   ├── EvaluatedActionNodeEvent.py
-│   │   ├── FinishExecuteActionEvent.py
-│   │   ├── PlanUpdatedEvent.py
-│   │   ├── PlanningFinishedEvent.py
-│   │   ├── PlanningFinishedForSingleGoalEvent.py
-│   │   ├── PlanningStartedEvent.py
-│   │   ├── PlanningStartedForSingleGoalEvent.py
-│   │   └── SensorRunningEvent.py
-│   ├── ExecutionStatus.py
-│   ├── ExtremeGoal.py
-│   ├── Goal.py
-│   ├── Internals
-│   │   ├── ActionAStar.py
-│   │   ├── ActionGraph.py
-│   │   ├── ActionNode.py
-│   │   ├── DictionaryExtensionMethods.py
-│   │   ├── Planner.py
-│   │   └── Utils.py
-│   ├── PermutationSelectorGenerators.py
-│   ├── PriorityQueue # Simplified Python implementation
-│   │   ├── FastPriorityQueue.py
-│   │   ├── FastPriorityQueueNode.py
-│   │   ├── GenericPriorityQueue.py
-│   │   ├── GenericPriorityQueueNode.py
-│   │   ├── IFixedSizePriorityQueue.py
-│   │   ├── IPriorityQueue.py
-│   │   ├── SimplePriorityQueue.py
-│   │   ├── StablePriorityQueue.py
-│   │   └── StablePriorityQueueNode.py
-│   ├── Sensor.py
-│   └── StepMode.py
-├── MountainGoapLogging
-│   └── DefaultLogger.py
-└── MountainGoapTest # Basic Python tests (pytest compatible)
-    ├── ActionContinuationTests.py
-    ├── ActionNodeTests.py
-    ├── ArithmeticPostconditionsTests.py
-    ├── PermutationSelectorGeneratorTests.py
-    ├── PermutationSelectorTests.py
-    └── conftest.py # for global imports like Xunit equivalent
-```
-
-**Note on `MountainGoap.sln`, `.csproj`, `.nuspec`, `.snk`, `packages.config`, and `stylecop.json` files:** These are specific to C#/.NET projects (solution files, project files, NuGet package specifications, strong name keys, and code style configuration). They do not have direct verbatim equivalents in a Python project. Their functionality (like dependency management, project structure) is handled differently in Python (e.g., `requirements.txt`, `setup.py`, direct imports, virtual environments). Therefore, these files will not be translated.
-
----
-
-**MountainGoap/CallbackDelegates/CostCallback.py**
-
 ```python
 # // <copyright file="CostCallback.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import TYPE_CHECKING, Callable, Dict, Any
-
-# if TYPE_CHECKING:
-#     from ..Action import Action
-#     from collections import UserDict # This is for type hinting a dictionary-like object
-
-# /// <summary>
-# /// Delegate type for a callback that defines the cost of an action.
-# /// </summary>
-# /// <param name="action">Action being executed.</param>
-# /// <param name="currentState">State as it will be when cost is relevant.</param>
-# /// <returns>Cost of the action.</returns>
-# public delegate float CostCallback(Action action, ConcurrentDictionary<string, object?> currentState);
 
 from typing import Callable, Dict, Any
 
@@ -112,21 +24,6 @@ CostCallback = Callable[['Action', StateDictionary], float]
 # // <copyright file="ExecutorCallback.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import TYPE_CHECKING, Callable
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..Action import Action
-#     from ..ExecutionStatus import ExecutionStatus
-
-# /// <summary>
-# /// Delegate type for a callback that defines a list of all possible parameter states for the given state.
-# /// </summary>
-# /// <param name="agent">Agent executing the action.</param>
-# /// <param name="action">Action being executed.</param>
-# /// <returns>New execution status of the action.</returns>
-# public delegate ExecutionStatus ExecutorCallback(Agent agent, Action action);
 
 from typing import Callable, TYPE_CHECKING
 
@@ -152,15 +49,6 @@ ExecutorCallback = Callable[['Agent', 'Action'], 'ExecutionStatus']
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, Dict, Any, List
-
-# /// <summary>
-# /// Delegate type for a callback that defines a list of all possible parameter states for the given state.
-# /// </summary>
-# /// <param name="state">Current world state.</param>
-# /// <returns>A list with each parameter set to be tried for the action.</returns>
-# public delegate List<object> PermutationSelectorCallback(ConcurrentDictionary<string, object?> state);
-
 from typing import Callable, Dict, Any, List
 
 # A type alias for the state dictionary
@@ -182,18 +70,6 @@ PermutationSelectorCallback = Callable[[StateDictionary], List[Any]]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-
-# /// <summary>
-# /// Delegate type for a callback that runs a sensor during a game loop.
-# /// </summary>
-# /// <param name="agent">Agent using the sensor.</param>
-# /// <returns>The execution status of the action.</returns>
-# public delegate void SensorRunCallback(Agent agent);
-
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -214,19 +90,6 @@ SensorRunCallback = Callable[['Agent'], None]
 # // <copyright file="StateCheckerCallback.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, Dict, Any, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Action import Action
-
-# /// <summary>
-# /// Delegate type for a callback that checks state before action execution or evaluation (the latter during planning).
-# /// </summary>
-# /// <param name="action">Action being executed or evaluated.</param>
-# /// <param name="currentState">State as it will be when the action is executed or evaluated.</param>
-# /// <returns>True if the state is okay for executing the action, otherwise false.</returns>
-# public delegate bool StateCheckerCallback(Action action, ConcurrentDictionary<string, object?> currentState);
 
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
@@ -253,19 +116,6 @@ StateCheckerCallback = Callable[['Action', StateDictionary], bool]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Action import Action
-
-# /// <summary>
-# /// Delegate type for a callback that provides multiplier for delta value of the respective key to obtain delta cost to use with ExtremeGoal and ComparativeGoal.
-# /// </summary>
-# /// <param name="action">Action being executed or evaluated.</param>
-# /// <param name="stateKey">Key to provide multiplier for</param>
-# /// <returns>Multiplier for the delta value to get delta cost</returns>
-# public delegate float StateCostDeltaMultiplierCallback(Action? action, string stateKey);
-
 from typing import Callable, TYPE_CHECKING, Optional
 
 if TYPE_CHECKING:
@@ -287,19 +137,6 @@ StateCostDeltaMultiplierCallback = Callable[[Optional['Action'], str], float]
 # // <copyright file="StateMutatorCallback.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, Dict, Any, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Action import Action
-
-# /// <summary>
-# /// Delegate type for a callback that mutates state following action execution or evaluation (the latter during planning).
-# /// </summary>
-# /// <param name="action">Action being executed or evaluated.</param>
-# /// <param name="currentState">State as it will be when the action is executed or evaluated.</param>
-# /// <returns>The execution status of the action.</returns>
-# public delegate void StateMutatorCallback(Action action, ConcurrentDictionary<string, object?> currentState);
 
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
@@ -326,17 +163,6 @@ StateMutatorCallback = Callable[['Action', StateDictionary], None]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent completes an action sequence.
-# /// </summary>
-# /// <param name="agent">Agent executing the action sequence.</param>
-# public delegate void AgentActionSequenceCompletedEvent(Agent agent);
-
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -355,17 +181,6 @@ AgentActionSequenceCompletedEvent = Callable[['Agent'], None]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent executes a step of work.
-# /// </summary>
-# /// <param name="agent">Agent executing the step of work.</param>
-# public delegate void AgentStepEvent(Agent agent);
-
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -383,20 +198,6 @@ AgentStepEvent = Callable[['Agent'], None]
 # // <copyright file="BeginExecuteActionEvent.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, Dict, Any, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..Action import Action
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an action begins executing.
-# /// </summary>
-# /// <param name="agent">Agent executing the action.</param>
-# /// <param name="action">Action being executed.</param>
-# /// <param name="parameters">Parameters to the action being executed.</param>
-# public delegate void BeginExecuteActionEvent(Agent agent, Action action, Dictionary<string, object?> parameters);
 
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
@@ -417,18 +218,6 @@ BeginExecuteActionEvent = Callable[['Agent', 'Action', Dict[str, Any]], None]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, Dict, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Internals.ActionNode import ActionNode
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent is evaluating a path for a potential action plan.
-# /// </summary>
-# /// <param name="node">Node being evaluated.</param>
-# /// <param name="nodes">All nodes in the plan being evaluated.</param>
-# public delegate void EvaluatedActionNodeEvent(ActionNode node, ConcurrentDictionary<ActionNode, ActionNode> nodes);
-
 from typing import Callable, Dict, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -446,22 +235,6 @@ EvaluatedActionNodeEvent = Callable[['ActionNode', Dict['ActionNode', 'ActionNod
 # // <copyright file="FinishExecuteActionEvent.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, Dict, Any, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..Action import Action
-#     from ..ExecutionStatus import ExecutionStatus
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an action finishes executing.
-# /// </summary>
-# /// <param name="agent">Agent executing the action.</param>
-# /// <param name="action">Action being executed.</param>
-# /// <param name="status">Execution status of the action.</param>
-# /// <param name="parameters">Parameters to the action being executed.</param>
-# public delegate void FinishExecuteActionEvent(Agent agent, Action action, ExecutionStatus status, Dictionary<string, object?> parameters);
 
 from typing import Callable, Dict, Any, TYPE_CHECKING
 
@@ -483,19 +256,6 @@ FinishExecuteActionEvent = Callable[['Agent', 'Action', 'ExecutionStatus', Dict[
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, List, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..Action import Action
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent has a new plan.
-# /// </summary>
-# /// <param name="agent">Agent executing the step of work.</param>
-# /// <param name="plan">Plan determined to be optimal for the agent.</param>
-# public delegate void PlanUpdatedEvent(Agent agent, List<Action> plan);
-
 from typing import Callable, List, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -514,20 +274,6 @@ PlanUpdatedEvent = Callable[['Agent', List['Action']], None]
 # // <copyright file="PlanningFinishedEvent.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, Optional, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..BaseGoal import BaseGoal
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent finishes planning.
-# /// </summary>
-# /// <param name="agent">Agent doing the planning.</param>
-# /// /// <param name="goal">Goal selected, or null if no valid plan was selected.</param>
-# /// <param name="utility">Calculated utility of the plan.</param>
-# public delegate void PlanningFinishedEvent(Agent agent, BaseGoal? goal, float utility);
 
 from typing import Callable, Optional, TYPE_CHECKING
 
@@ -548,20 +294,6 @@ PlanningFinishedEvent = Callable[['Agent', Optional['BaseGoal'], float], None]
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..BaseGoal import BaseGoal
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent finishes planning for a single goal.
-# /// </summary>
-# /// <param name="agent">Agent doing the planning.</param>
-# /// <param name="goal">Goal for which planning was finished.</param>
-# /// <param name="utility">Calculated utility of the plan.</param>
-# public delegate void PlanningFinishedForSingleGoalEvent(Agent agent, BaseGoal goal, float utility);
-
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -581,17 +313,6 @@ PlanningFinishedForSingleGoalEvent = Callable[['Agent', 'BaseGoal', float], None
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent begins planning.
-# /// </summary>
-# /// <param name="agent">Agent doing the planning.</param>
-# public delegate void PlanningStartedEvent(Agent agent);
-
 from typing import Callable, TYPE_CHECKING
 
 if TYPE_CHECKING:
@@ -609,19 +330,6 @@ PlanningStartedEvent = Callable[['Agent'], None]
 # // <copyright file="PlanningStartedForSingleGoalEvent.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..BaseGoal import BaseGoal
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent starts planning for a single goal.
-# /// </summary>
-# /// <param name="agent">Agent doing the planning.</param>
-# /// <param name="goal">Goal for which planning was started.</param>
-# public delegate void PlanningStartedForSingleGoalEvent(Agent agent, BaseGoal goal);
 
 from typing import Callable, TYPE_CHECKING
 
@@ -641,19 +349,6 @@ PlanningStartedForSingleGoalEvent = Callable[['Agent', 'BaseGoal'], None]
 # // <copyright file="SensorRunningEvent.py" company="Chris Muller">
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
-
-# from typing import Callable, TYPE_CHECKING
-
-# if TYPE_CHECKING:
-#     from ..Agent import Agent
-#     from ..Sensor import Sensor
-
-# /// <summary>
-# /// Delegate type for a listener to the event that fires when an agent sensor is about to run.
-# /// </summary>
-# /// <param name="agent">Agent running the sensor.</param>
-# /// <param name="sensor">Sensor that is about to run.</param>
-# public delegate void SensorRunEvent(Agent agent, Sensor sensor);
 
 from typing import Callable, TYPE_CHECKING
 
@@ -676,35 +371,15 @@ SensorRunEvent = Callable[['Agent', 'Sensor'], None]
 
 import uuid
 
-# /// <summary>
-# /// Represents an abstract class for a goal to be achieved for an agent.
-# /// </summary>
 class BaseGoal:
     """
     Represents an abstract class for a goal to be achieved for an agent.
     """
 
-    # /// <summary>
-    # /// Name of the goal.
-    # /// </summary>
-    # public readonly string Name;
     Name: str
 
-    # /// <summary>
-    # /// Weight to give the goal.
-    # /// </summary>
-    # internal readonly float Weight;
     Weight: float
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="BaseGoal"/> class.
-    # /// </summary>
-    # /// <param name="name">Name of the goal.</param>
-    # /// <param name="weight">Weight to give the goal.</param>
-    # protected BaseGoal(string? name = null, float weight = 1f) {
-    #     Name = name ?? $"Goal {Guid.NewGuid()}";
-    #     Weight = weight;
-    # }
     def __init__(self, name: str = None, weight: float = 1.0):
         """
         Initializes a new instance of the BaseGoal class.
@@ -729,49 +404,21 @@ class BaseGoal:
 
 from enum import Enum
 
-# /// <summary>
-# /// List of operators that can be used for comparison.
-# /// </summary>
 class ComparisonOperator(Enum):
     """
     List of operators that can be used for comparison.
     """
 
-    # /// <summary>
-    # /// Undefined comparison operator (will not do anything).
-    # /// </summary>
-    # Undefined = 0,
     Undefined = 0
 
-    # /// <summary>
-    # /// Equality (==) operator.
-    # /// </summary>
-    # Equals = 1,
     Equals = 1
-
-    # /// <summary>
-    # /// Less than (<) operator.
-    # /// </summary>
-    # LessThan = 2
 
     LessThan = 2
 
-    # /// <summary>
-    # /// Less than or equals (<=) operator.
-    # /// </summary>
-    # LessThanOrEquals = 3
     LessThanOrEquals = 3
 
-    # /// <summary>
-    # /// Greater than (>) operator).
-    # /// </summary>
-    # GreaterThan = 4
     GreaterThan = 4
 
-    # /// <summary>
-    # /// Greater than or equals (>=) operator.
-    # /// </summary>
-    # GreaterThanOrEquals = 5
     GreaterThanOrEquals = 5
 
 ```
@@ -788,24 +435,13 @@ class ComparisonOperator(Enum):
 from typing import Any, Optional
 from .ComparisonOperator import ComparisonOperator
 
-# /// <summary>
-# /// List of operators that can be used for comparison.
-# /// </summary>
 class ComparisonValuePair:
     """
     List of operators that can be used for comparison.
     """
 
-    # /// <summary>
-    # /// Gets or sets the value to be compared against.
-    # /// </summary>
-    # public object? Value { get; set; } = null;
     Value: Optional[Any] = None
 
-    # /// <summary>
-    # /// Gets or sets the operator to be used for comparison.
-    # /// </summary>
-    # public ComparisonOperator Operator { get; set; } = ComparisonOperator.Undefined;
     Operator: ComparisonOperator = ComparisonOperator.Undefined
 
     def __init__(self, value: Optional[Any] = None, operator: ComparisonOperator = ComparisonOperator.Undefined):
@@ -827,30 +463,13 @@ from typing import Dict, Optional
 from .BaseGoal import BaseGoal
 from .ComparisonValuePair import ComparisonValuePair
 
-# /// <summary>
-# /// Represents a goal to be achieved for an agent.
-# /// </summary>
 class ComparativeGoal(BaseGoal):
     """
     Represents a goal to be achieved for an agent.
     """
 
-    # /// <summary>
-    # /// Desired state for the comparative goal.
-    # /// </summary>
-    # internal readonly Dictionary<string, ComparisonValuePair> DesiredState;
     DesiredState: Dict[str, ComparisonValuePair]
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="ComparativeGoal"/> class.
-    # /// </summary>
-    # /// <param name="name">Name of the goal.</param>
-    # /// <param name="weight">Weight to give the goal.</param>
-    # /// <param name="desiredState">Desired state for the comparative goal.</param>
-    # public ComparativeGoal(string? name = null, float weight = 1f, Dictionary<string, ComparisonValuePair>? desiredState = null)
-    #     : base(name, weight) {
-    #     DesiredState = desiredState ?? new();
-    # }
     def __init__(self, name: Optional[str] = None, weight: float = 1.0,
                  desired_state: Optional[Dict[str, ComparisonValuePair]] = None):
         """
@@ -877,42 +496,19 @@ class ComparativeGoal(BaseGoal):
 
 from enum import Enum
 
-# /// <summary>
-# /// Possible execution status for an action.
-# /// </summary>
 class ExecutionStatus(Enum):
     """
     Possible execution status for an action.
     """
 
-    # /// <summary>
-    # /// Indicates that the action is not currently executing.
-    # /// </summary>
-    # NotYetExecuted = 1
     NotYetExecuted = 1
 
-    # /// <summary>
-    # /// Indicates that the action is currently executing.
-    # /// </summary>
-    # Executing = 2
     Executing = 2
 
-    # /// <summary>
-    # /// Indicates that the action has succeeded.
-    # /// </summary>
-    # Succeeded = 3
     Succeeded = 3
 
-    # /// <summary>
-    # /// Indicates that the action has failed.
-    # /// </summary>
-    # Failed = 4
     Failed = 4
 
-    # /// <summary>
-    # /// Indicates that the action is not possible due to preconditions.
-    # /// </summary>
-    # NotPossible = 5
     NotPossible = 5
 
 ```
@@ -929,30 +525,13 @@ class ExecutionStatus(Enum):
 from typing import Dict, Optional
 from .BaseGoal import BaseGoal
 
-# /// <summary>
-# /// Represents a goal requiring an extreme value to be achieved for an agent.
-# /// </summary>
 class ExtremeGoal(BaseGoal):
     """
     Represents a goal requiring an extreme value to be achieved for an agent.
     """
 
-    # /// <summary>
-    # /// Dictionary of states to be maximized or minimized. A value of true indicates to maximize the goal, a value of false indicates to minimize it.
-    # /// </summary>
-    # internal readonly Dictionary<string, bool> DesiredState;
     DesiredState: Dict[str, bool]
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="ExtremeGoal"/> class.
-    # /// </summary>
-    # /// <param name="name">Name of the goal.</param>
-    # /// <param name="weight">Weight to give the goal.</param>
-    # /// <param name="desiredState">States to be maximized or minimized.</param>
-    # public ExtremeGoal(string? name = null, float weight = 1f, Dictionary<string, bool>? desiredState = null)
-    #     : base(name, weight) {
-    #     DesiredState = desiredState ?? new();
-    # }
     def __init__(self, name: Optional[str] = None, weight: float = 1.0,
                  desired_state: Optional[Dict[str, bool]] = None):
         """
@@ -980,30 +559,13 @@ class ExtremeGoal(BaseGoal):
 from typing import Dict, Any, Optional
 from .BaseGoal import BaseGoal
 
-# /// <summary>
-# /// Represents a goal to be achieved for an agent.
-# /// </summary>
 class Goal(BaseGoal):
     """
     Represents a goal to be achieved for an agent.
     """
 
-    # /// <summary>
-    # /// Desired world state to be achieved.
-    # /// </summary>
-    # internal readonly Dictionary<string, object?> DesiredState;
     DesiredState: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="Goal"/> class.
-    # /// </summary>
-    # /// <param name="name">Name of the goal.</param>
-    # /// <param name="weight">Weight to give the goal.</param>
-    # /// <param name="desiredState">Desired end state of the goal.</param>
-    # public Goal(string? name = null, float weight = 1f, Dictionary<string, object?>? desiredState = null)
-    #     : base(name, weight) {
-    #     DesiredState = desiredState ?? new();
-    # }
     def __init__(self, name: Optional[str] = None, weight: float = 1.0,
                  desired_state: Optional[Dict[str, Optional[Any]]] = None):
         """
@@ -1030,30 +592,15 @@ class Goal(BaseGoal):
 
 from enum import Enum
 
-# /// <summary>
-# /// Different modes with which MountainGoap can execute an agent step.
-# /// </summary>
 class StepMode(Enum):
     """
     Different modes with which MountainGoap can execute an agent step.
     """
 
-    # /// <summary>
-    # /// Default step mode. Runs async, doesn't necessitate taking action.
-    # /// </summary>
-    # Default = 1
     Default = 1
 
-    # /// <summary>
-    # /// Turn-based step mode, plans synchronously, executes at least one action if possible.
-    # /// </summary>
-    # OneAction = 2
     OneAction = 2
 
-    # /// <summary>
-    # /// Turn-based step mode, plans synchronously, executes all actions in planned action sequence.
-    # /// </summary>
-    # AllActions = 3
     AllActions = 3
 
 ```
@@ -1070,23 +617,12 @@ class StepMode(Enum):
 from typing import Dict, Any, Optional, List
 from ..ComparisonValuePair import ComparisonValuePair
 
-# /// <summary>
-# /// Extension method to copy a dictionary of strings and objects.
-# /// </summary>
 class DictionaryExtensionMethods:
     """
     Extension method to copy a dictionary of strings and objects.
     In Python, this will be implemented as static methods since there are no true extension methods.
     """
 
-    # /// <summary>
-    # /// Copies the dictionary to a shallow clone.
-    # /// </summary>
-    # /// <param name="dictionary">Dictionary to be copied.</param>
-    # /// <returns>A shallow copy of the dictionary.</returns>
-    # internal static Dictionary<string, object?> Copy(this Dictionary<string, object?> dictionary) {
-    #     return dictionary.ToDictionary(entry => entry.Key, entry => entry.Value);
-    # }
     @staticmethod
     def copy_dict(dictionary: Dict[str, Optional[Any]]) -> Dict[str, Optional[Any]]:
         """
@@ -1100,14 +636,6 @@ class DictionaryExtensionMethods:
         """
         return dictionary.copy()
 
-    # /// <summary>
-    # /// Copies the concurrent dictionary to a shallow clone.
-    # /// </summary>
-    # /// <param name="dictionary">Dictionary to be copied.</param>
-    # /// <returns>A shallow copy of the dictionary.</returns>
-    # internal static ConcurrentDictionary<string, object?> Copy(this ConcurrentDictionary<string, object?> dictionary) {
-    #     return new ConcurrentDictionary<string, object?>(dictionary);
-    # }
     # In Python, standard dict is generally thread-safe for basic operations, and
     # for more complex concurrent updates, a Lock or queue would be used.
     # For a direct equivalent, we'll just use a standard dict copy.
@@ -1124,14 +652,6 @@ class DictionaryExtensionMethods:
         """
         return dictionary.copy()
 
-    # /// <summary>
-    # /// Copies the dictionary to a shallow clone.
-    # /// </summary>
-    # /// <param name="dictionary">Dictionary to be copied.</param>
-    # /// <returns>A shallow copy of the dictionary.</returns>
-    # internal static Dictionary<string, ComparisonValuePair> Copy(this Dictionary<string, ComparisonValuePair> dictionary) {
-    #     return dictionary.ToDictionary(entry => entry.Key, entry => entry.Value);
-    # }
     @staticmethod
     def copy_comparison_value_pair_dict(dictionary: Dict[str, ComparisonValuePair]) -> Dict[str, ComparisonValuePair]:
         """
@@ -1145,14 +665,6 @@ class DictionaryExtensionMethods:
         """
         return dictionary.copy()
 
-    # /// <summary>
-    # /// Copies the dictionary to a shallow clone.
-    # /// </summary>
-    # /// <param name="dictionary">Dictionary to be copied.</param>
-    # /// <returns>A shallow copy of the dictionary.</returns>
-    # internal static Dictionary<string, string> Copy(this Dictionary<string, string> dictionary) {
-    #     return dictionary.ToDictionary(entry => entry.Key, entry => entry.Value);
-    # }
     @staticmethod
     def copy_string_dict(dictionary: Dict[str, str]) -> Dict[str, str]:
         """
@@ -1166,14 +678,6 @@ class DictionaryExtensionMethods:
         """
         return dictionary.copy()
 
-    # /// <summary>
-    # /// Copies the dictionary to a shallow clone.
-    # /// </summary>
-    # /// <param name="dictionary">Dictionary to be copied.</param>
-    # /// <returns>A shallow copy of the dictionary.</returns>
-    # internal static Dictionary<string, object> CopyNonNullable(this Dictionary<string, object> dictionary) {
-    #     return dictionary.ToDictionary(entry => entry.Key, entry => entry.Value);
-    # }
     @staticmethod
     def copy_non_nullable_dict(dictionary: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -1200,33 +704,15 @@ class DictionaryExtensionMethods:
 
 # #pragma warning disable
 
-# /// <summary>
-# /// Base class for nodes in FastPriorityQueue.
-# /// </summary>
 class FastPriorityQueueNode:
     """
     Base class for nodes in FastPriorityQueue.
     """
 
-    # /// <summary>
-    # /// The Priority to insert this node at.
-    # /// Cannot be manually edited - see queue.Enqueue() and queue.UpdatePriority() instead
-    # /// </summary>
-    # public float Priority { get; protected internal set; }
     Priority: float
 
-    # /// <summary>
-    # /// Represents the current position in the queue
-    # /// </summary>
-    # public int QueueIndex { get; internal set; }
     QueueIndex: int
 
-    # #if DEBUG
-    # /// <summary>
-    # /// The queue this node is tied to. Used only for debug builds.
-    # /// </summary>
-    # public object Queue { get; internal set; }
-    # #endif
     _queue: object = None # Internal reference to the queue for debugging/validation
 
     def __init__(self):
@@ -1250,38 +736,16 @@ from typing import TypeVar, Any
 
 TPriority = TypeVar('TPriority')
 
-# /// <summary>
-# /// Base class for nodes in GenericPriorityQueue.
-# /// </summary>
 class GenericPriorityQueueNode(FastPriorityQueueNode): # Inherit from FastPriorityQueueNode (or a common base)
     """
     Base class for nodes in GenericPriorityQueue.
     """
-    # /// <summary>
-    # /// The Priority to insert this node at.
-    # /// Cannot be manually edited - see queue.Enqueue() and queue.UpdatePriority() instead
-    # /// </summary>
-    # public TPriority Priority { get; protected internal set; }
     Priority: TPriority
 
-    # /// <summary>
-    # /// Represents the current position in the queue
-    # /// </summary>
-    # public int QueueIndex { get; internal set; }
     QueueIndex: int # Inherited from FastPriorityQueueNode
 
-    # /// <summary>
-    # /// Represents the order the node was inserted in
-    # /// </summary>
-    # public long InsertionIndex { get; internal set; }
     InsertionIndex: int # Using int for simplicity instead of long
 
-    # #if DEBUG
-    # /// <summary>
-    # /// The queue this node is tied to. Used only for debug builds.
-    # /// </summary>
-    # public object Queue { get; internal set; }
-    # #endif
     _queue: Any = None # Internal reference to the queue for debugging/validation
 
     def __init__(self):
@@ -1304,18 +768,11 @@ class GenericPriorityQueueNode(FastPriorityQueueNode): # Inherit from FastPriori
 
 from .FastPriorityQueueNode import FastPriorityQueueNode
 
-# /// <summary>
-# /// Base class for nodes in StablePriorityQueue.
-# /// </summary>
 class StablePriorityQueueNode(FastPriorityQueueNode):
     """
     Base class for nodes in StablePriorityQueue.
     """
 
-    # /// <summary>
-    # /// Represents the order the node was inserted in
-    # /// </summary>
-    # public long InsertionIndex { get; internal set; }
     InsertionIndex: int # Using int for simplicity instead of long
 
     def __init__(self):
@@ -1341,21 +798,11 @@ from typing import TypeVar, Generic, Iterable
 TItem = TypeVar('TItem')
 TPriority = TypeVar('TPriority')
 
-# /// <summary>
-# /// The IPriorityQueue interface.  This is mainly here for purists, and in case I decide to add more implementations later.
-# /// For speed purposes, it is actually recommended that you *don't* access the priority queue through this interface, since the JIT can
-# /// (theoretically?) optimize method calls from concrete-types slightly better.
-# /// </summary>
 class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
     """
     The IPriorityQueue interface.
     """
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue.  Lower values are placed in front. Ties are broken by first-in-first-out.
-    # /// See implementation for how duplicates are handled.
-    # /// </summary>
-    # void Enqueue(TItem node, TPriority priority);
     @abstractmethod
     def enqueue(self, node: TItem, priority: TPriority) -> None:
         """
@@ -1363,10 +810,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it.
-    # /// </summary>
-    # TItem Dequeue();
     @abstractmethod
     def dequeue(self) -> TItem:
         """
@@ -1374,10 +817,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Removes every node from the queue.
-    # /// </summary>
-    # void Clear();
     @abstractmethod
     def clear(self) -> None:
         """
@@ -1385,10 +824,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Returns whether the given node is in the queue.
-    # /// </summary>
-    # bool Contains(TItem node);
     @abstractmethod
     def contains(self, node: TItem) -> bool:
         """
@@ -1396,10 +831,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Removes a node from the queue. The node does not need to be the head of the queue.
-    # /// </summary>
-    # void Remove(TItem node);
     @abstractmethod
     def remove(self, node: TItem) -> None:
         """
@@ -1407,10 +838,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Call this method to change the priority of a node.
-    # /// </summary>
-    # void UpdatePriority(TItem node, TPriority priority);
     @abstractmethod
     def update_priority(self, node: TItem, priority: TPriority) -> None:
         """
@@ -1418,10 +845,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Returns the head of the queue, without removing it (use Dequeue() for that).
-    # /// </summary>
-    # TItem First { get; }
     @property
     @abstractmethod
     def first(self) -> TItem:
@@ -1430,10 +853,6 @@ class IPriorityQueue(ABC, Generic[TItem, TPriority], Iterable[TItem]):
         """
         pass
 
-    # /// <summary>
-    # /// Returns the number of nodes in the queue.
-    # /// </summary>
-    # int Count { get; }
     @property
     @abstractmethod
     def count(self) -> int:
@@ -1466,19 +885,11 @@ from .IPriorityQueue import IPriorityQueue
 TItem = TypeVar('TItem')
 TPriority = TypeVar('TPriority')
 
-# /// <summary>
-# /// A helper-interface only needed to make writing unit tests a bit easier (hence the 'internal' access modifier)
-# /// </summary>
 class IFixedSizePriorityQueue(IPriorityQueue[TItem, TPriority], Generic[TItem, TPriority]):
     """
     A helper-interface for fixed-size priority queues.
     """
 
-    # /// <summary>
-    # /// Resize the queue so it can accept more nodes. All currently enqueued nodes are remain.
-    # /// Attempting to decrease the queue size to a size too small to hold the existing nodes results in undefined behavior
-    # /// </summary>
-    # void Resize(int maxNodes);
     @abstractmethod
     def resize(self, max_nodes: int) -> None:
         """
@@ -1486,11 +897,6 @@ class IFixedSizePriorityQueue(IPriorityQueue[TItem, TPriority], Generic[TItem, T
         """
         pass
 
-    # /// <summary>
-    # /// Returns the maximum number of items that can be enqueued at once in this queue. Once you hit this number (ie. once Count == MaxSize),
-    # /// attempting to enqueue another item will cause undefined behavior.
-    # /// </summary>
-    # int MaxSize { get; }
     @property
     @abstractmethod
     def max_size(self) -> int:
@@ -1499,11 +905,6 @@ class IFixedSizePriorityQueue(IPriorityQueue[TItem, TPriority], Generic[TItem, T
         """
         pass
 
-    # /// <summary>
-    # /// By default, nodes that have been previously added to one queue cannot be added to another queue.
-    # /// If you need to do this, please call originalQueue.ResetNode(node) before attempting to add it in the new queue
-    # /// </summary>
-    # void ResetNode(TItem node);
     @abstractmethod
     def reset_node(self, node: TItem) -> None:
         """
@@ -1532,11 +933,6 @@ from .IFixedSizePriorityQueue import IFixedSizePriorityQueue
 
 T = TypeVar('T', bound=FastPriorityQueueNode)
 
-# /// <summary>
-# /// An implementation of a min-Priority Queue using a heap.  Has O(1) .Contains()!
-# /// See https://github.com/BlueRaja/High-Speed-Priority-Queue-for-C-Sharp/wiki/Getting-Started for more information
-# /// </summary>
-# /// <typeparam name="T">The values in the queue.  Must extend the FastPriorityQueueNode class</typeparam>
 class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
     """
     An implementation of a min-Priority Queue using a heap.
@@ -1548,11 +944,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
     _node_to_index: Dict[T, int] # For O(1) contains and fast updates
     _insertion_order: int # Counter for tie-breaking in stable queues
 
-    # /// <summary>
-    # /// Instantiate a new Priority Queue
-    # /// </summary>
-    # /// <param name="maxNodes">The max nodes ever allowed to be enqueued (going over this will cause undefined behavior)</param>
-    # public FastPriorityQueue(int maxNodes)
     def __init__(self, max_nodes: int):
         """
         Instantiate a new Priority Queue.
@@ -1567,17 +958,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._node_to_index = {}
         self._insertion_order = 0
 
-    # /// <summary>
-    # /// Returns the number of nodes in the queue.
-    # /// O(1)
-    # /// </summary>
-    # public int Count
-    # {
-    #     get
-    #     {
-    #         return _numNodes;
-    #     }
-    # }
     @property
     def count(self) -> int:
         """
@@ -1585,17 +965,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         """
         return self._num_nodes
 
-    # /// <summary>
-    # /// Returns the maximum number of items that can be enqueued at once in this queue.
-    # /// O(1)
-    # /// </summary>
-    # public int MaxSize
-    # {
-    #     get
-    #     {
-    #         return _nodes.Length - 1;
-    #     }
-    # }
     @property
     def max_size(self) -> int:
         """
@@ -1603,11 +972,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         """
         return len(self._nodes) - 1
 
-    # /// <summary>
-    # /// Removes every node from the queue.
-    # /// O(n) (So, don't do this often!)
-    # /// </summary>
-    # public void Clear()
     def clear(self) -> None:
         """
         Removes every node from the queue. O(n)
@@ -1621,10 +985,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._num_nodes = 0
         self._insertion_order = 0
 
-    # /// <summary>
-    # /// Returns (in O(1)!) whether the given node is in the queue.
-    # /// </summary>
-    # public bool Contains(T node)
     def contains(self, node: T) -> bool:
         """
         Returns whether the given node is in the queue. O(1)
@@ -1647,10 +1007,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         
         return is_at_correct_index
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue. Lower values are placed in front.
-    # /// </summary>
-    # public void Enqueue(T node, float priority)
     def enqueue(self, node: T, priority: float) -> None:
         """
         Enqueue a node to the priority queue. Lower values are placed in front. O(log n)
@@ -1673,10 +1029,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
 
         self._cascade_up(node)
 
-    # /// <summary>
-    # /// Helper method to move a node up the heap.
-    # /// </summary>
-    # private void CascadeUp(T node)
     def _cascade_up(self, node: T) -> None:
         """
         Helper method to move a node up the heap (Heapify-up).
@@ -1701,10 +1053,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
 
             current_index = parent_index
 
-    # /// <summary>
-    # /// Helper method to move a node down the heap.
-    # /// </summary>
-    # private void CascadeDown(T node)
     def _cascade_down(self, node: T) -> None:
         """
         Helper method to move a node down the heap (Heapify-down).
@@ -1746,10 +1094,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
 
             current_index = swap_index
 
-    # /// <summary>
-    # /// Returns true if 'higher' has higher priority than 'lower', false otherwise.
-    # /// </summary>
-    # private bool HasHigherPriority(T higher, T lower)
     def _has_higher_priority(self, higher: Optional[T], lower: Optional[T]) -> bool:
         """
         Returns true if 'higher' has higher priority than 'lower', false otherwise.
@@ -1758,11 +1102,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
             return False
         return higher.Priority < lower.Priority
 
-    # /// <summary>
-    # /// Returns true if 'higher' has higher priority than 'lower', false otherwise.
-    # /// Note that calling HasHigherOrEqualPriority(node, node) (ie. both arguments the same node) will return true
-    # /// </summary>
-    # private bool HasHigherOrEqualPriority(T higher, T lower)
     def _has_higher_or_equal_priority(self, higher: Optional[T], lower: Optional[T]) -> bool:
         """
         Returns true if 'higher' has higher or equal priority than 'lower', false otherwise.
@@ -1771,11 +1110,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
             return False
         return higher.Priority <= lower.Priority
 
-    # /// <summary>
-    # /// Removes the head of the queue and returns it.
-    # /// O(log n)
-    # /// </summary>
-    # public T Dequeue()
     def dequeue(self) -> T:
         """
         Removes the head of the queue and returns it. O(log n)
@@ -1818,11 +1152,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._cascade_down(former_last_node)
         return return_me
 
-    # /// <summary>
-    # /// Resize the queue so it can accept more nodes.
-    # /// O(n)
-    # /// </summary>
-    # public void Resize(int maxNodes)
     def resize(self, max_nodes: int) -> None:
         """
         Resize the queue so it can accept more nodes. O(n)
@@ -1837,21 +1166,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
             new_nodes[i] = self._nodes[i]
         self._nodes = new_nodes
 
-    # /// <summary>
-    # /// Returns the head of the queue, without removing it.
-    # /// O(1)
-    # /// </summary>
-    # public T First
-    # {
-    #     get
-    #     {
-    #         if(_numNodes <= 0)
-    #         {
-    #             throw new InvalidOperationException("Cannot call .First on an empty queue");
-    #         }
-    #         return _nodes[1];
-    #     }
-    # }
     @property
     def first(self) -> T:
         """
@@ -1863,11 +1177,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
             raise RuntimeError("First element in heap is unexpectedly None")
         return self._nodes[1]
 
-    # /// <summary>
-    # /// This method must be called on a node every time its priority changes while it is in the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void UpdatePriority(T node, float priority)
     def update_priority(self, node: T, priority: float) -> None:
         """
         This method must be called on a node every time its priority changes while it is in the queue. O(log n)
@@ -1886,10 +1195,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
 
         self._on_node_updated(node, old_priority) # Pass old priority for comparison
 
-    # /// <summary>
-    # /// Helper method called when a node's priority is updated.
-    # /// </summary>
-    # private void OnNodeUpdated(T node)
     def _on_node_updated(self, node: T, old_priority: float) -> None:
         """
         Helper method called when a node's priority is updated.
@@ -1902,11 +1207,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
             self._cascade_down(node)
 
 
-    # /// <summary>
-    # /// Removes a node from the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void Remove(T node)
     def remove(self, node: T) -> None:
         """
         Removes a node from the queue. O(log n)
@@ -1953,11 +1253,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._on_node_updated(former_last_node, old_priority_of_former_last_node)
 
 
-    # /// <summary>
-    # /// By default, nodes that have been previously added to one queue cannot be added to another queue.
-    # /// If you need to do this, please call originalQueue.ResetNode(node) before attempting to add it in the new queue
-    # /// </summary>
-    # public void ResetNode(T node)
     def reset_node(self, node: T) -> None:
         """
         Resets a node's internal state to allow it to be reused in another queue.
@@ -1972,7 +1267,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
         node.QueueIndex = 0
         node._queue = None
 
-    # public IEnumerator<T> GetEnumerator()
     def __iter__(self) -> Iterable[T]:
         """
         Returns an iterator over the nodes currently in the queue.
@@ -1988,10 +1282,6 @@ class FastPriorityQueue(IFixedSizePriorityQueue[T, float]):
                 active_nodes.append(node)
         return iter(active_nodes)
 
-    # /// <summary>
-    # /// Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
-    # /// </summary>
-    # public bool IsValidQueue()
     def is_valid_queue(self) -> bool:
         """
         Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
@@ -2057,11 +1347,6 @@ from .IFixedSizePriorityQueue import IFixedSizePriorityQueue
 TItem = TypeVar('TItem', bound=GenericPriorityQueueNode)
 TPriority = TypeVar('TPriority')
 
-# /// <summary>
-# /// A copy of StablePriorityQueue which also has generic priority-type
-# /// </summary>
-# /// <typeparam name="TItem">The values in the queue. Must extend the GenericPriorityQueueNode class</typeparam>
-# /// <typeparam name="TPriority">The priority-type. Must extend IComparable&lt;TPriority&gt;</typeparam>
 class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
     """
     A priority queue implementation with generic priority-type and stability.
@@ -2074,13 +1359,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
     _num_nodes_ever_enqueued: int  # For tie-breaking (insertion order)
     _comparer: Callable[[TPriority, TPriority], int] # Custom comparison for TPriority
 
-    # /// <summary>
-    # /// Instantiate a new Priority Queue
-    # /// </summary>
-    # /// <param name="maxNodes">The max nodes ever allowed to be enqueued</param>
-    # public GenericPriorityQueue(int maxNodes) : this(maxNodes, Comparer<TPriority>.Default) { }
-    # public GenericPriorityQueue(int maxNodes, IComparer<TPriority> comparer) : this(maxNodes, comparer.Compare) { }
-    # public GenericPriorityQueue(int maxNodes, Comparison<TPriority> comparer)
     def __init__(self, max_nodes: int, comparer: Optional[Callable[[TPriority, TPriority], int]] = None):
         """
         Instantiate a new Priority Queue.
@@ -2112,11 +1390,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         else:
             self._comparer = comparer
 
-    # /// <summary>
-    # /// Returns the number of nodes in the queue.
-    # /// O(1)
-    # /// </summary>
-    # public int Count
     @property
     def count(self) -> int:
         """
@@ -2124,11 +1397,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         """
         return self._num_nodes
 
-    # /// <summary>
-    # /// Returns the maximum number of items that can be enqueued at once in this queue.
-    # /// O(1)
-    # /// </summary>
-    # public int MaxSize
     @property
     def max_size(self) -> int:
         """
@@ -2136,11 +1404,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         """
         return len(self._nodes) - 1
 
-    # /// <summary>
-    # /// Removes every node from the queue.
-    # /// O(n) (So, don't do this often!)
-    # /// </summary>
-    # public void Clear()
     def clear(self) -> None:
         """
         Removes every node from the queue. O(n)
@@ -2155,10 +1418,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         self._num_nodes = 0
         self._num_nodes_ever_enqueued = 0
 
-    # /// <summary>
-    # /// Returns (in O(1)!) whether the given node is in the queue.
-    # /// </summary>
-    # public bool Contains(TItem node)
     def contains(self, node: TItem) -> bool:
         """
         Returns whether the given node is in the queue. O(1)
@@ -2176,11 +1435,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
 
         return is_at_correct_index
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue. Lower values are placed in front. Ties are broken by first-in-first-out.
-    # /// O(log n)
-    # /// </summary>
-    # public void Enqueue(TItem node, TPriority priority)
     def enqueue(self, node: TItem, priority: TPriority) -> None:
         """
         Enqueue a node to the priority queue. Lower values are placed in front. Ties are broken by first-in-first-out. O(log n)
@@ -2206,10 +1460,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
 
         self._cascade_up(node)
 
-    # /// <summary>
-    # /// Helper method to move a node up the heap.
-    # /// </summary>
-    # private void CascadeUp(TItem node)
     def _cascade_up(self, node: TItem) -> None:
         """
         Helper method to move a node up the heap (Heapify-up).
@@ -2234,10 +1484,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
 
             current_index = parent_index
 
-    # /// <summary>
-    # /// Helper method to move a node down the heap.
-    # /// </summary>
-    # private void CascadeDown(TItem node)
     def _cascade_down(self, node: TItem) -> None:
         """
         Helper method to move a node down the heap (Heapify-down).
@@ -2282,11 +1528,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
 
             current_index = swap_index
 
-    # /// <summary>
-    # /// Returns true if 'higher' has higher priority than 'lower', false otherwise.
-    # /// Note that calling HasHigherPriority(node, node) (ie. both arguments the same node) will return false
-    # /// </summary>
-    # private bool HasHigherPriority(TItem higher, TItem lower)
     def _has_higher_priority(self, higher: Optional[TItem], lower: Optional[TItem]) -> bool:
         """
         Returns true if 'higher' has higher priority than 'lower', false otherwise.
@@ -2299,11 +1540,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         return (cmp < 0) or (cmp == 0 and higher.InsertionIndex < lower.InsertionIndex)
 
 
-    # /// <summary>
-    # /// Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it.
-    # /// O(log n)
-    # /// </summary>
-    # public TItem Dequeue()
     def dequeue(self) -> TItem:
         """
         Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it. O(log n)
@@ -2348,11 +1584,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         self._cascade_down(former_last_node)
         return return_me
 
-    # /// <summary>
-    # /// Resize the queue so it can accept more nodes.
-    # /// O(n)
-    # /// </summary>
-    # public void Resize(int maxNodes)
     def resize(self, max_nodes: int) -> None:
         """
         Resize the queue so it can accept more nodes. O(n)
@@ -2367,11 +1598,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
             new_nodes[i] = self._nodes[i]
         self._nodes = new_nodes
 
-    # /// <summary>
-    # /// Returns the head of the queue, without removing it.
-    # /// O(1)
-    # /// </summary>
-    # public TItem First
     @property
     def first(self) -> TItem:
         """
@@ -2383,11 +1609,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
             raise RuntimeError("First element in heap is unexpectedly None")
         return self._nodes[1]
 
-    # /// <summary>
-    # /// This method must be called on a node every time its priority changes while it is in the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void UpdatePriority(TItem node, TPriority priority)
     def update_priority(self, node: TItem, priority: TPriority) -> None:
         """
         This method must be called on a node every time its priority changes while it is in the queue. O(log n)
@@ -2403,10 +1624,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         node.Priority = priority
         self._on_node_updated(node, old_priority)
 
-    # /// <summary>
-    # /// Helper method called when a node's priority is updated.
-    # /// </summary>
-    # private void OnNodeUpdated(TItem node)
     def _on_node_updated(self, node: TItem, old_priority: TPriority) -> None:
         """
         Helper method called when a node's priority is updated.
@@ -2425,11 +1642,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         # if old and new priorities are same, no heap adjustment is strictly needed for stability.
 
 
-    # /// <summary>
-    # /// Removes a node from the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void Remove(TItem node)
     def remove(self, node: TItem) -> None:
         """
         Removes a node from the queue. O(log n)
@@ -2471,10 +1683,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         self._on_node_updated(former_last_node, old_priority_of_former_last_node)
 
 
-    # /// <summary>
-    # /// Resets a node's internal state to allow it to be reused in another queue.
-    # /// </summary>
-    # public void ResetNode(TItem node)
     def reset_node(self, node: TItem) -> None:
         """
         Resets a node's internal state to allow it to be reused in another queue.
@@ -2490,7 +1698,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
         node._queue = None
         node.InsertionIndex = 0
 
-    # public IEnumerator<TItem> GetEnumerator()
     def __iter__(self) -> Iterable[TItem]:
         """
         Returns an iterator over the nodes currently in the queue.
@@ -2502,10 +1709,6 @@ class GenericPriorityQueue(IFixedSizePriorityQueue[TItem, TPriority]):
                 active_nodes.append(node)
         return iter(active_nodes)
 
-    # /// <summary>
-    # /// Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
-    # /// </summary>
-    # public bool IsValidQueue()
     def is_valid_queue(self) -> bool:
         """
         Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
@@ -2563,11 +1766,6 @@ from .IFixedSizePriorityQueue import IFixedSizePriorityQueue
 
 T = TypeVar('T', bound=StablePriorityQueueNode)
 
-# /// <summary>
-# /// A copy of FastPriorityQueue which is also stable - that is, when two nodes are enqueued with the same priority, they
-# /// are always dequeued in the same order.
-# /// </summary>
-# /// <typeparam name="T">The values in the queue. Must extend the StablePriorityQueueNode class</typeparam>
 class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
     """
     A stable priority queue implementation.
@@ -2579,11 +1777,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
     _node_to_index: Dict[T, int] # For O(1) contains and fast updates
     _num_nodes_ever_enqueued: int # For tie-breaking (insertion order)
 
-    # /// <summary>
-    # /// Instantiate a new Priority Queue
-    # /// </summary>
-    # /// <param name="maxNodes">The max nodes ever allowed to be enqueued</param>
-    # public StablePriorityQueue(int maxNodes)
     def __init__(self, max_nodes: int):
         """
         Instantiate a new Priority Queue.
@@ -2599,11 +1792,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._node_to_index = {}
         self._num_nodes_ever_enqueued = 0
 
-    # /// <summary>
-    # /// Returns the number of nodes in the queue.
-    # /// O(1)
-    # /// </summary>
-    # public int Count
     @property
     def count(self) -> int:
         """
@@ -2611,11 +1799,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         """
         return self._num_nodes
 
-    # /// <summary>
-    # /// Returns the maximum number of items that can be enqueued at once in this queue.
-    # /// O(1)
-    # /// </summary>
-    # public int MaxSize
     @property
     def max_size(self) -> int:
         """
@@ -2623,11 +1806,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         """
         return len(self._nodes) - 1
 
-    # /// <summary>
-    # /// Removes every node from the queue.
-    # /// O(n) (So, don't do this often!)
-    # /// </summary>
-    # public void Clear()
     def clear(self) -> None:
         """
         Removes every node from the queue. O(n)
@@ -2642,10 +1820,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         self._num_nodes = 0
         self._num_nodes_ever_enqueued = 0
 
-    # /// <summary>
-    # /// Returns (in O(1)!) whether the given node is in the queue.
-    # /// </summary>
-    # public bool Contains(T node)
     def contains(self, node: T) -> bool:
         """
         Returns whether the given node is in the queue. O(1)
@@ -2663,11 +1837,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
 
         return is_at_correct_index
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue. Lower values are placed in front. Ties are broken by first-in-first-out.
-    # /// O(log n)
-    # /// </summary>
-    # public void Enqueue(T node, float priority)
     def enqueue(self, node: T, priority: float) -> None:
         """
         Enqueue a node to the priority queue. Lower values are placed in front. Ties are broken by first-in-first-out. O(log n)
@@ -2693,10 +1862,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
 
         self._cascade_up(node)
 
-    # /// <summary>
-    # /// Helper method to move a node up the heap.
-    # /// </summary>
-    # private void CascadeUp(T node)
     def _cascade_up(self, node: T) -> None:
         """
         Helper method to move a node up the heap (Heapify-up).
@@ -2721,10 +1886,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
 
             current_index = parent_index
 
-    # /// <summary>
-    # /// Helper method to move a node down the heap.
-    # /// </summary>
-    # private void CascadeDown(T node)
     def _cascade_down(self, node: T) -> None:
         """
         Helper method to move a node down the heap (Heapify-down).
@@ -2769,11 +1930,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
 
             current_index = swap_index
 
-    # /// <summary>
-    # /// Returns true if 'higher' has higher priority than 'lower', false otherwise.
-    # /// Includes tie-breaking by InsertionIndex.
-    # /// </summary>
-    # private bool HasHigherPriority(T higher, T lower)
     def _has_higher_priority(self, higher: Optional[T], lower: Optional[T]) -> bool:
         """
         Returns true if 'higher' has higher priority than 'lower', false otherwise.
@@ -2784,11 +1940,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         return (higher.Priority < lower.Priority) or \
                (higher.Priority == lower.Priority and higher.InsertionIndex < lower.InsertionIndex)
 
-    # /// <summary>
-    # /// Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it.
-    # /// O(log n)
-    # /// </summary>
-    # public T Dequeue()
     def dequeue(self) -> T:
         """
         Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it. O(log n)
@@ -2831,15 +1982,9 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         return_me._queue = None
         return_me.InsertionIndex = 0
 
-        # Now bubble former_last_node (which is no longer the last node) down
         self._on_node_updated(former_last_node, old_priority_of_former_last_node)
         return return_me
 
-    # /// <summary>
-    # /// Resize the queue so it can accept more nodes.
-    # /// O(n)
-    # /// </summary>
-    # public void Resize(int maxNodes)
     def resize(self, max_nodes: int) -> None:
         """
         Resize the queue so it can accept more nodes. O(n)
@@ -2854,11 +1999,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
             new_nodes[i] = self._nodes[i]
         self._nodes = new_nodes
 
-    # /// <summary>
-    # /// Returns the head of the queue, without removing it.
-    # /// O(1)
-    # /// </summary>
-    # public T First
     @property
     def first(self) -> T:
         """
@@ -2870,11 +2010,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
             raise RuntimeError("First element in heap is unexpectedly None")
         return self._nodes[1]
 
-    # /// <summary>
-    # /// This method must be called on a node every time its priority changes while it is in the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void UpdatePriority(T node, float priority)
     def update_priority(self, node: T, priority: float) -> None:
         """
         This method must be called on a node every time its priority changes while it is in the queue. O(log n)
@@ -2890,10 +2025,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         node.Priority = priority
         self._on_node_updated(node, old_priority)
 
-    # /// <summary>
-    # /// Helper method called when a node's priority is updated.
-    # /// </summary>
-    # private void OnNodeUpdated(T node)
     def _on_node_updated(self, node: T, old_priority: float) -> None:
         """
         Helper method called when a node's priority is updated.
@@ -2905,11 +2036,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
             self._cascade_down(node)
         # If priorities are equal, no action needed for stability here as InsertionIndex doesn't change on update
 
-    # /// <summary>
-    # /// Removes a node from the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public void Remove(T node)
     def remove(self, node: T) -> None:
         """
         Removes a node from the queue. O(log n)
@@ -2950,10 +2076,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
 
         self._on_node_updated(former_last_node, old_priority_of_former_last_node)
 
-    # /// <summary>
-    # /// Resets a node's internal state to allow it to be reused in another queue.
-    # /// </summary>
-    # public void ResetNode(T node)
     def reset_node(self, node: T) -> None:
         """
         Resets a node's internal state to allow it to be reused in another queue.
@@ -2969,7 +2091,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
         node._queue = None
         node.InsertionIndex = 0
 
-    # public IEnumerator<T> GetEnumerator()
     def __iter__(self) -> Iterable[T]:
         """
         Returns an iterator over the nodes currently in the queue.
@@ -2981,10 +2102,6 @@ class StablePriorityQueue(IFixedSizePriorityQueue[T, float]):
                 active_nodes.append(node)
         return iter(active_nodes)
 
-    # /// <summary>
-    # /// Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
-    # /// </summary>
-    # public bool IsValidQueue()
     def is_valid_queue(self) -> bool:
         """
         Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
@@ -3045,24 +2162,11 @@ from .IPriorityQueue import IPriorityQueue
 TItem = TypeVar('TItem')
 TPriority = TypeVar('TPriority')
 
-# /// <summary>
-# /// A simplified priority queue implementation.  Is stable, auto-resizes, and thread-safe, at the cost of being slightly slower than
-# /// FastPriorityQueue
-# /// Methods tagged as O(1) or O(log n) are assuming there are no duplicates.  Duplicates may increase the algorithmic complexity.
-# /// </summary>
-# /// <typeparam name="TItem">The type to enqueue</typeparam>
-# /// <typeparam name="TPriority">The priority-type to use for nodes.  Must extend IComparable&lt;TPriority&gt;</typeparam>
 class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
     """
     A simplified priority queue implementation. Is stable, auto-resizes, and thread-safe.
     """
 
-    # Private inner class SimpleNode
-    # private class SimpleNode : GenericPriorityQueueNode<TPriority>
-    # {
-    #     public TItem Data { get; private set; }
-    #     public SimpleNode(TItem data) { Data = data; }
-    # }
     class _SimpleNode(GenericPriorityQueueNode[TPriority]):
         """Internal node to wrap the TItem and carry priority/indexing info."""
         def __init__(self, data: TItem):
@@ -3081,11 +2185,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
     _null_nodes_cache: List[_SimpleNode] # Special list for null items (Python: None)
     _lock: threading.Lock # For thread-safety
 
-    # /// <summary>
-    # /// Instantiate a new Priority Queue
-    # /// </summary>
-    # public SimplePriorityQueue() : this(Comparer<TPriority>.Default, EqualityComparer<TItem>.Default) { }
-    # ... multiple constructors ...
     def __init__(self, priority_comparer: Optional[Union[Callable[[TPriority, TPriority], int], Any]] = None,
                  item_equality_comparer: Optional[Any] = None):
         """
@@ -3127,10 +2226,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
         self._null_nodes_cache = [] # List[_SimpleNode]
         self._lock = threading.Lock() # For thread-safety
 
-    # /// <summary>
-    # /// Given an item of type T, returns the existing SimpleNode in the queue
-    # /// </summary>
-    # private SimpleNode GetExistingNode(TItem item)
     def _get_existing_node(self, item: TItem) -> Optional[_SimpleNode]:
         """
         Given an item of type T, returns the existing SimpleNode in the queue.
@@ -3142,16 +2237,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
         nodes = self._item_to_nodes_cache.get(item)
         return nodes[0] if nodes else None
 
-    # /// <summary>
-    # /// Adds an item to the Node-cache to allow for many methods to be O(1) or O(log n)
-    # /// </summary>
-    # private void AddToNodeCache(SimpleNode node)
-    # This C# method is implicitly handled by `_item_to_nodes_cache` in Python `enqueue`
-
-    # /// <summary>
-    # /// Removes an item to the Node-cache to allow for many methods to be O(1) or O(log n) (assuming no duplicates)
-    # /// </summary>
-    # private void RemoveFromNodeCache(SimpleNode node)
     def _remove_from_node_cache(self, node: _SimpleNode) -> None:
         """
         Removes an item from the Node-cache.
@@ -3169,11 +2254,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             if not nodes: # If list is empty after removal, clean up dict entry
                 del self._item_to_nodes_cache[node.Data]
 
-    # /// <summary>
-    # /// Returns the number of nodes in the queue.
-    # /// O(1)
-    # /// </summary>
-    # public int Count
     @property
     def count(self) -> int:
         """
@@ -3182,12 +2262,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
         with self._lock:
             return self._queue.count
 
-    # /// <summary>
-    # /// Returns the head of the queue, without removing it (use Dequeue() for that).
-    # /// Throws an exception when the queue is empty.
-    # /// O(1)
-    # /// </summary>
-    # public TItem First
     @property
     def first(self) -> TItem:
         """
@@ -3198,11 +2272,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                 raise RuntimeError("Cannot call .first on an empty queue")
             return self._queue.first.Data
 
-    # /// <summary>
-    # /// Removes every node from the queue.
-    # /// O(n)
-    # /// </summary>
-    # public void Clear()
     def clear(self) -> None:
         """
         Removes every node from the queue. O(n)
@@ -3212,11 +2281,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             self._item_to_nodes_cache.clear()
             self._null_nodes_cache.clear()
 
-    # /// <summary>
-    # /// Returns whether the given item is in the queue.
-    # /// O(1)
-    # /// </summary>
-    # public bool Contains(TItem item)
     def contains(self, item: TItem) -> bool:
         """
         Returns whether the given item is in the queue. O(1)
@@ -3226,12 +2290,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                 return len(self._null_nodes_cache) > 0
             return item in self._item_to_nodes_cache
 
-    # /// <summary>
-    # /// Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and returns it.
-    # /// If queue is empty, throws an exception
-    # /// O(log n)
-    # /// </summary>
-    # public TItem Dequeue()
     def dequeue(self) -> TItem:
         """
         Removes the head of the queue and returns it. O(log n)
@@ -3244,11 +2302,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             self._remove_from_node_cache(node)
             return node.Data
 
-    # /// <summary>
-    # /// Enqueue the item with the given priority, without calling lock(_queue) or AddToNodeCache(node)
-    # /// This is an internal helper for C# that is absorbed into public enqueue in Python
-    # /// </summary>
-    # private SimpleNode EnqueueNoLockOrCache(TItem item, TPriority priority)
     def _enqueue_no_lock_or_cache(self, item: TItem, priority: TPriority) -> _SimpleNode:
         """
         Internal helper: Enqueue the item without external locking/caching logic.
@@ -3259,13 +2312,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
         self._queue.enqueue(node, priority)
         return node
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue. Lower values are placed in front. Ties are broken by first-in-first-out.
-    # /// This queue automatically resizes itself, so there's no concern of the queue becoming 'full'.
-    # /// Duplicates and null-values are allowed.
-    # /// O(log n)
-    # /// </summary>
-    # public void Enqueue(TItem item, TPriority priority)
     def enqueue(self, item: TItem, priority: TPriority) -> None:
         """
         Enqueue a node to the priority queue. O(log n)
@@ -3278,12 +2324,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             node = self._enqueue_no_lock_or_cache(item, priority)
             nodes.append(node)
 
-    # /// <summary>
-    # /// Enqueue a node to the priority queue if it doesn't already exist.
-    # /// Returns true if the node was successfully enqueued; false if it already exists.
-    # /// O(log n)
-    # /// </summary>
-    # public bool EnqueueWithoutDuplicates(TItem item, TPriority priority)
     def enqueue_without_duplicates(self, item: TItem, priority: TPriority) -> bool:
         """
         Enqueue a node to the priority queue if it doesn't already exist. O(log n)
@@ -3305,13 +2345,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             nodes.append(node)
             return True
 
-    # /// <summary>
-    # /// Removes an item from the queue.
-    # /// If the item is not in the queue, an exception is thrown.
-    # /// If multiple copies of the item are enqueued, only the first one is removed.
-    # /// O(log n)
-    # /// </summary>
-    # public void Remove(TItem item)
     def remove(self, item: TItem) -> None:
         """
         Removes an item from the queue. O(log n)
@@ -3339,13 +2372,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             self._remove_from_node_cache(remove_me)
 
 
-    # /// <summary>
-    # /// Call this method to change the priority of an item.
-    # /// Calling this method on a item not in the queue will throw an exception.
-    # /// If the item is enqueued multiple times, only the first one will be updated.
-    # /// O(log n)
-    # /// </summary>
-    # public void UpdatePriority(TItem item, TPriority priority)
     def update_priority(self, item: TItem, priority: TPriority) -> None:
         """
         Call this method to change the priority of an item. O(log n)
@@ -3356,13 +2382,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                 raise RuntimeError(f"Cannot call update_priority() on a node which is not enqueued: {item}")
             self._queue.update_priority(update_me, priority)
 
-    # /// <summary>
-    # /// Returns the priority of the given item.
-    # /// Calling this method on a item not in the queue will throw an exception.
-    # /// If the item is enqueued multiple times, only the priority of the first will be returned.
-    # /// O(1)
-    # /// </summary>
-    # public TPriority GetPriority(TItem item)
     def get_priority(self, item: TItem) -> TPriority:
         """
         Returns the priority of the given item. O(1)
@@ -3373,11 +2392,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                 raise RuntimeError(f"Cannot call get_priority() on a node which is not enqueued: {item}")
             return find_me.Priority
 
-    # #region Try* methods for multithreading
-    # /// Get the head of the queue, without removing it (use TryDequeue() for that).
-    # /// Returns true if successful, false otherwise
-    # /// O(1)
-    # public bool TryFirst(out TItem first)
     def try_first(self) -> tuple[bool, Optional[TItem]]:
         """
         Attempts to get the head of the queue without removing it. O(1)
@@ -3391,12 +2405,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                     return True, self._queue.first.Data
         return False, None
 
-    # /// <summary>
-    # /// Removes the head of the queue (node with minimum priority; ties are broken by order of insertion), and sets it to first.
-    # /// Returns true if successful; false if queue was empty
-    # /// O(log n)
-    # /// </summary>
-    # public bool TryDequeue(out TItem first)
     def try_dequeue(self) -> tuple[bool, Optional[TItem]]:
         """
         Attempts to remove the head of the queue and return it. O(log n)
@@ -3413,12 +2421,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                     return True, first
         return False, None
 
-    # /// <summary>
-    # /// Attempts to remove an item from the queue.
-    # /// Returns true if the item was successfully removed, false if it wasn't in the queue.
-    # /// O(log n)
-    # /// </summary>
-    # public bool TryRemove(TItem item)
     def try_remove(self, item: TItem) -> bool:
         """
         Attempts to remove an item from the queue. O(log n)
@@ -3449,12 +2451,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             return True
 
 
-    # /// <summary>
-    # /// Call this method to change the priority of an item.
-    # /// Returns true if the item priority was updated, false otherwise.
-    # /// O(log n)
-    # /// </summary>
-    # public bool TryUpdatePriority(TItem item, TPriority priority)
     def try_update_priority(self, item: TItem, priority: TPriority) -> bool:
         """
         Attempts to change the priority of an item. O(log n)
@@ -3469,12 +2465,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             self._queue.update_priority(update_me, priority)
             return True
 
-    # /// <summary>
-    # /// Attempt to get the priority of the given item.
-    # /// Returns true if the item was found in the queue, false otherwise
-    # /// O(1)
-    # /// </summary>
-    # public bool TryGetPriority(TItem item, out TPriority priority)
     def try_get_priority(self, item: TItem) -> tuple[bool, Optional[TPriority]]:
         """
         Attempts to get the priority of the given item. O(1)
@@ -3487,9 +2477,7 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             if find_me is None:
                 return False, None
             return True, find_me.Priority
-    # #endregion
 
-    # public IEnumerator<TItem> GetEnumerator()
     def __iter__(self) -> Iterable[TItem]:
         """
         Returns an iterator over the items currently in the queue.
@@ -3500,7 +2488,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
                 queue_data.append(node.Data)
         return iter(queue_data)
 
-    # public bool IsValidQueue()
     def is_valid_queue(self) -> bool:
         """
         Checks to make sure the queue is still in a valid state. Used for testing/debugging the queue.
@@ -3536,35 +2523,6 @@ class SimplePriorityQueue(IPriorityQueue[TItem, TPriority]):
             # Check queue structure itself
             return self._queue.is_valid_queue()
 
-
-# /// <summary>
-# /// A simplified priority queue implementation with float priority.
-# /// This class is kept here for backwards compatibility. It's recommended you use SimplePriorityQueue&lt;TItem, TPriority&gt;
-# /// </summary>
-# /// <typeparam name="TItem">The type to enqueue</typeparam>
-# public class SimplePriorityQueue<TItem> : SimplePriorityQueue<TItem, float>
-# {
-#     /// <summary>
-#     /// Instantiate a new Priority Queue
-#     /// </summary>
-#     public SimplePriorityQueue() { }
-#
-#     /// <summary>
-#     /// Instantiate a new Priority Queue
-#     /// </summary>
-#     /// <param name="comparer">The comparer used to compare priority values. Defaults to Comparer&lt;float&gt;.default</param>
-#     public SimplePriorityQueue(IComparer<float> comparer) : base(comparer) { }
-#
-#     /// <summary>
-#     /// Instantiate a new Priority Queue
-#     /// </summary>
-#     /// <param name="comparer">The comparison function to use to compare priority values</param>
-#     public SimplePriorityQueue(Comparison<float> comparer) : base(comparer) { }
-# }
-# This specialized class is not strictly necessary in Python due to default arguments and `float` being a basic type.
-# Users can just instantiate `SimplePriorityQueue[TItem, float]` directly.
-# However, for verbatim, we can provide a wrapper.
-
 TItemFloat = TypeVar('TItemFloat')
 
 class SimplePriorityQueueFloat(SimplePriorityQueue[TItemFloat, float]):
@@ -3597,30 +2555,11 @@ if TYPE_CHECKING:
     from ..ComparisonOperator import ComparisonOperator
     from .ActionNode import ActionNode
 
-# /// <summary>
-# /// Utilities for the MountainGoap library.
-# /// </summary>
 class Utils:
     """
     Utilities for the MountainGoap library.
     """
 
-    # /// <summary>
-    # /// Indicates whether a is lower than b.
-    # /// </summary>
-    # /// <param name="a">First element to be compared.</param>
-    # /// <param name="b">Second element to be compared.</param>
-    # /// <returns>True if lower, false otherwise.</returns>
-    # internal static bool IsLowerThan(object a, object b) {
-    #     if (a == null || b == null) return false;
-    #     if (a is int intA && b is int intB) return intA < intB;
-    #     if (a is long longA && b is long longB) return longA < longB;
-    #     if (a is float floatA && b is float floatB) return floatA < floatB;
-    #     if (a is double doubleA && b is double doubleB) return doubleA < doubleB;
-    #     if (a is decimal decimalA && b is decimal decimalB) return decimalA < decimalB;
-    #     if (a is DateTime dateTimeA && b is DateTime dateTimeB) return dateTimeA < dateTimeB;
-    #     return false;
-    # }
     @staticmethod
     def is_lower_than(a: Any, b: Any) -> bool:
         """
@@ -3643,15 +2582,6 @@ class Utils:
             return False
 
 
-    # /// <summary>
-    # /// Indicates whether a is higher than b.
-    # /// </summary>
-    # /// <param name="a">First element to be compared.</param>
-    # /// <param name="b">Second element to be compared.</param>
-    # /// <returns>True if higher, false otherwise.</returns>
-    # internal static bool IsHigherThan(object a, object b) {
-    #     ... similar logic ...
-    # }
     @staticmethod
     def is_higher_than(a: Any, b: Any) -> bool:
         """
@@ -3668,15 +2598,6 @@ class Utils:
         except TypeError:
             return False
 
-    # /// <summary>
-    # /// Indicates whether a is lower than or equal to b.
-    # /// </summary>
-    # /// <param name="a">First element to be compared.</param>
-    # /// <param name="b">Second element to be compared.</param>
-    # /// <returns>True if lower or equal, false otherwise.</returns>
-    # internal static bool IsLowerThanOrEquals(object a, object b) {
-    #     ... similar logic ...
-    # }
     @staticmethod
     def is_lower_than_or_equals(a: Any, b: Any) -> bool:
         """
@@ -3693,15 +2614,6 @@ class Utils:
         except TypeError:
             return False
 
-    # /// <summary>
-    # /// Indicates whether a is higher than or equal to b.
-    # /// </summary>
-    # /// <param name="a">First element to be compared.</param>
-    # /// <param name="b">Second element to be compared.</param>
-    # /// <returns>True if higher or equal, false otherwise.</returns>
-    # internal static bool IsHigherThanOrEquals(object a, object b) {
-    #     ... similar logic ...
-    # }
     @staticmethod
     def is_higher_than_or_equals(a: Any, b: Any) -> bool:
         """
@@ -3718,16 +2630,6 @@ class Utils:
         except TypeError:
             return False
 
-    # /// <summary>
-    # /// Indicates whether or not a goal is met by an action node.
-    # /// </summary>
-    # /// <param name="goal">Goal to be met.</param>
-    # /// <param name="actionNode">Action node being tested.</param>
-    # /// <param name="current">Prior node in the action chain.</param>
-    # /// <returns>True if the goal is met, otherwise false.</returns>
-    # internal static bool MeetsGoal(BaseGoal goal, ActionNode actionNode, ActionNode current) {
-    #     ... logic ...
-    # }
     @staticmethod
     def meets_goal(goal: 'BaseGoal', action_node: 'ActionNode', current: 'ActionNode') -> bool:
         """
@@ -3814,44 +2716,17 @@ from .DictionaryExtensionMethods import DictionaryExtensionMethods
 if TYPE_CHECKING:
     from ..Action import Action
 
-# /// <summary>
-# /// Represents an action node in an action graph.
-# /// </summary>
 class ActionNode(FastPriorityQueueNode):
     """
     Represents an action node in an action graph.
     """
 
-    # /// <summary>
-    # /// Gets or sets the state of the world for this action node.
-    # /// </summary>
-    # public ConcurrentDictionary<string, object?> State { get; set; }
     State: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Gets or sets parameters to be passed to the action.
-    # /// </summary>
-    # public Dictionary<string, object?> Parameters { get; set; }
     Parameters: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Gets or sets the action to be executed when the world is in the defined <see cref="State"/>.
-    # /// </summary>
-    # public Action? Action { get; set; }
     Action: Optional['Action']
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="ActionNode"/> class.
-    # /// </summary>
-    # /// <param name="action">Action to be assigned to the node.</param>
-    # /// <param name="state">State to be assigned to the node.</param>
-    # /// <param name="parameters">Parameters to be passed to the action in the node.</param>
-    # internal ActionNode(Action? action, ConcurrentDictionary<string, object?> state, Dictionary<string, object?> parameters) {
-    #     if (action != null) Action = action.Copy();
-    #     State = state.Copy();
-    #     Parameters = parameters.Copy();
-    #     Action?.SetParameters(Parameters);
-    # }
     def __init__(self, action: Optional['Action'], state: Dict[str, Optional[Any]], parameters: Dict[str, Optional[Any]]):
         """
         Initializes a new instance of the ActionNode class.
@@ -3864,19 +2739,6 @@ class ActionNode(FastPriorityQueueNode):
         if self.Action is not None:
             self.Action.set_parameters(self.Parameters)
 
-    # #pragma warning disable S3875 // "operator==" should not be overloaded on reference types
-    # /// <summary>
-    # /// Overrides the equality operator on ActionNodes.
-    # /// </summary>
-    # /// <param name="node1">First node to be compared.</param>
-    # /// <param name="node2">Second node to be compared.</param>
-    # /// <returns>True if equal, otherwise false.</returns>
-    # public static bool operator ==(ActionNode? node1, ActionNode? node2) {
-    #     if (node1 is null) return node2 is null;
-    #     if (node2 is null) return node1 is null;
-    #     if (node1.Action == null || node2.Action == null) return (node1.Action == node2.Action) && node1.StateMatches(node2);
-    #     return node1.Action.Equals(node2.Action) && node1.StateMatches(node2);
-    # }
     def __eq__(self, other: object) -> bool:
         """
         Overrides the equality operator on ActionNodes.
@@ -3900,39 +2762,12 @@ class ActionNode(FastPriorityQueueNode):
         return self._state_matches(other)
 
 
-    # /// <summary>
-    # /// Overrides the inequality operator on ActionNodes.
-    # /// </summary>
-    # /// <param name="node1">First node to be compared.</param>
-    # /// <param name="node2">Second node to be compared.</param>
-    # /// <returns>True if unequal, otherwise false.</returns>
-    # public static bool operator !=(ActionNode? node1, ActionNode? node2) {
-    #     if (node1 is null) return node2 is not null;
-    #     if (node2 is null) return node1 is not null;
-    #     if (node1.Action is not null) return !node1.Action.Equals(node2.Action) || !node1.StateMatches(node2);
-    #     return node2.Action is null;
-    # }
     def __ne__(self, other: object) -> bool:
         """
         Overrides the inequality operator on ActionNodes.
         """
         return not self.__eq__(other)
 
-    # /// <inheritdoc/>
-    # public override bool Equals(object? obj) {
-    #     if (obj is not ActionNode item) return false;
-    #     return this == item;
-    # }
-    # This is handled by __eq__ in Python directly.
-
-    # /// <inheritdoc/>
-    # public override int GetHashCode() {
-    #     var hashCode = 629302477;
-    #     if (Action != null) hashCode = (hashCode * -1521134295) + EqualityComparer<Action>.Default.GetHashCode(Action);
-    #     else hashCode *= -1521134295;
-    #     hashCode = (hashCode * -1521134295) + EqualityComparer<ConcurrentDictionary<string, object?>>.Default.GetHashCode(State);
-    #     return hashCode;
-    # }
     def __hash__(self) -> int:
         """
         Overrides the hash code generation for ActionNodes.
@@ -3950,15 +2785,6 @@ class ActionNode(FastPriorityQueueNode):
         
         return hash((action_hash, state_tuple))
 
-    # /// <summary>
-    # /// Cost to traverse this node.
-    # /// </summary>
-    # /// <param name="currentState">Current state after previous node is executed.</param>
-    # /// <returns>The cost of the action to be executed.</returns>
-    # internal float Cost(ConcurrentDictionary<string, object?> currentState) {
-    #     if (Action == null) return float.MaxValue;
-    #     return Action.GetCost(currentState);
-    # }
     def cost(self, current_state: Dict[str, Optional[Any]]) -> float:
         """
         Cost to traverse this node.
@@ -3967,21 +2793,6 @@ class ActionNode(FastPriorityQueueNode):
             return float('inf') # float.MaxValue in C#
         return self.Action.get_cost(current_state)
 
-    # private bool StateMatches(ActionNode otherNode) {
-    #     foreach (var kvp in State) {
-    #         if (!otherNode.State.ContainsKey(kvp.Key)) return false;
-    #         if (otherNode.State[kvp.Key] == null && otherNode.State[kvp.Key] != kvp.Value) return false;
-    #         else if (otherNode.State[kvp.Key] == null && otherNode.State[kvp.Key] == kvp.Value) continue;
-    #         if (otherNode.State[kvp.Key] is object obj && !obj.Equals(kvp.Value)) return false;
-    #     }
-    #     foreach (var kvp in otherNode.State) {
-    #         if (!State.ContainsKey(kvp.Key)) return false;
-    #         if (State[kvp.Key] == null && State[kvp.Key] != kvp.Value) return false;
-    #         else if (State[kvp.Key] == null && State[kvp.Key] == kvp.Value) continue;
-    #         if (otherNode.State[kvp.Key] is object obj && !obj.Equals(kvp.Value)) return false;
-    #     }
-    #     return true;
-    # }
     def _state_matches(self, other_node: 'ActionNode') -> bool:
         """
         Compares the state of this node with another node for equality.
@@ -4025,128 +2836,45 @@ from .Events.FinishExecuteActionEvent import FinishExecuteActionEvent
 # A type alias for the state dictionary
 StateDictionary = Dict[str, Optional[Any]]
 
-# /// <summary>
-# /// Represents an action in a GOAP system.
-# /// </summary>
 class Action:
     """
     Represents an action in a GOAP system.
     """
 
-    # /// <summary>
-    # /// Name of the action.
-    # /// </summary>
-    # public readonly string Name;
     Name: str
 
-    # /// <summary>
-    # /// Cost of the action.
-    # /// </summary>
-    # private readonly float cost;
     _cost_base: float
 
-    # /// <summary>
-    # /// The permutation selector callbacks for the action.
-    # /// </summary>
-    # private readonly Dictionary<string, PermutationSelectorCallback> permutationSelectors;
     _permutation_selectors: Dict[str, PermutationSelectorCallback]
 
-    # /// <summary>
-    # /// The executor callback for the action.
-    # /// </summary>
-    # private readonly ExecutorCallback executor;
     _executor: ExecutorCallback
 
-    # /// <summary>
-    # /// The cost callback for the action.
-    # /// </summary>
-    # private readonly CostCallback costCallback;
     _cost_callback: CostCallback
 
-    # /// <summary>
-    # /// Preconditions for the action. These things are required for the action to execute.
-    # /// </summary>
-    # private readonly Dictionary<string, object?> preconditions = new();
     _preconditions: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Comparative preconditions for the action. Indicates that a value must be greater than or less than a certain value for the action to execute.
-    # /// </summary>
-    # private readonly Dictionary<string, ComparisonValuePair> comparativePreconditions = new();
     _comparative_preconditions: Dict[str, ComparisonValuePair]
 
-    # /// <summary>
-    # /// Postconditions for the action. These will be set when the action has executed.
-    # /// </summary>
-    # private readonly Dictionary<string, object?> postconditions = new();
     _postconditions: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Arithmetic postconditions for the action. These will be added to the current value when the action has executed.
-    # /// </summary>
-    # private readonly Dictionary<string, object> arithmeticPostconditions = new();
     _arithmetic_postconditions: Dict[str, Any] # Non-nullable in C#
 
-    # /// <summary>
-    # /// Parameter postconditions for the action. When the action has executed, the value of the parameter given in the key will be copied to the state with the name given in the value.
-    # /// </summary>
-    # private readonly Dictionary<string, string> parameterPostconditions = new();
     _parameter_postconditions: Dict[str, str]
 
-    # /// <summary>
-    # /// State mutator for modifying state programmatically after action execution or evaluation.
-    # /// </summary>
-    # private readonly StateMutatorCallback? stateMutator;
     _state_mutator: Optional[StateMutatorCallback]
 
-    # /// <summary>
-    # /// State checker for checking state programmatically before action execution or evaluation.
-    # /// </summary>
-    # private readonly StateCheckerCallback? stateChecker;
     _state_checker: Optional[StateCheckerCallback]
 
-    # /// <summary>
-    # /// Parameters to be passed to the action.
-    # /// </summary>
-    # private Dictionary<string, object?> parameters = new();
     _parameters: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Multiplier for delta value to provide delta cost.
-    # /// </summary>
-    # public StateCostDeltaMultiplierCallback? StateCostDeltaMultiplier { get; set; }
     StateCostDeltaMultiplier: Optional[StateCostDeltaMultiplierCallback]
 
     # Events (static in C#)
     OnBeginExecuteAction: BeginExecuteActionEvent
     OnFinishExecuteAction: FinishExecuteActionEvent
 
-    # /// <summary>
-    # /// Gets or sets the execution status of the action.
-    # /// </summary>
-    # internal ExecutionStatus ExecutionStatus { get; set; } = ExecutionStatus.NotYetExecuted;
     ExecutionStatus: ExecutionStatus = ExecutionStatus.NotYetExecuted
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="Action"/> class.
-    # /// </summary>
-    # public Action(string? name = null, Dictionary<string, PermutationSelectorCallback>? permutationSelectors = null, ExecutorCallback? executor = null, float cost = 1f, CostCallback? costCallback = null, Dictionary<string, object?>? preconditions = null, Dictionary<string, ComparisonValuePair>? comparativePreconditions = null, Dictionary<string, object?>? postconditions = null, Dictionary<string, object>? arithmeticPostconditions = null, Dictionary<string, string>? parameterPostconditions = null, StateMutatorCallback? stateMutator = null, StateCheckerCallback? stateChecker = null, StateCostDeltaMultiplierCallback? stateCostDeltaMultiplier = null) {
-    #     if (permutationSelectors == null) this.permutationSelectors = new();
-    #     else this.permutationSelectors = permutationSelectors;
-    #     if (executor == null) this.executor = DefaultExecutorCallback;
-    #     else this.executor = executor;
-    #     Name = name ?? $"Action {Guid.NewGuid()} ({this.executor.GetMethodInfo().Name})";
-    #     this.cost = cost;
-    #     this.costCallback = costCallback ?? DefaultCostCallback;
-    #     if (preconditions != null) this.preconditions = preconditions;
-    #     if (comparativePreconditions != null) this.comparativePreconditions = comparativePreconditions;
-    #     if (postconditions != null) this.postconditions = postconditions;
-    #     if (arithmeticPostconditions != null) this.arithmeticPostconditions = arithmeticPostconditions;
-    #     if (parameterPostconditions != null) this.parameterPostconditions = parameterPostconditions;
-    #     if (stateMutator != null) this.stateMutator = stateMutator;
-    #     if (stateChecker != null) this.stateChecker = stateChecker;
-    #     StateCostDeltaMultiplier = stateCostDeltaMultiplier ?? DefaultStateCostDeltaMultiplier;
-    # }
     def __init__(self,
                  name: Optional[str] = None,
                  permutation_selectors: Optional[Dict[str, PermutationSelectorCallback]] = None,
@@ -4191,7 +2919,6 @@ class Action:
         # Note: Event handling in Python is often done via simple callable lists or a custom Event class.
         # Here, we'll use a callable that calls into a list of registered handlers.
         # This setup needs to be done once, typically at the module level or by a dedicated event manager.
-        # For simplicity, we'll make them static/class methods and handle registration.
         # In C#, `+= (agent, action, parameters) => { }` means if no handler is registered, it's an empty anonymous method.
         # In Python, an empty list of handlers implies no action, or a dummy default handler.
 
@@ -4235,15 +2962,6 @@ class Action:
         # #pragma warning restore S1172 // Unused method parameters should be removed
 
 
-    # /// <summary>
-    # /// Makes a copy of the action.
-    # /// </summary>
-    # public Action Copy() {
-    #     var newAction = new Action(Name, permutationSelectors, executor, cost, costCallback, preconditions.Copy(), comparativePreconditions.Copy(), postconditions.Copy(), arithmeticPostconditions.CopyNonNullable(), parameterPostconditions.Copy(), stateMutator, stateChecker, StateCostDeltaMultiplier) {
-    #         parameters = parameters.Copy()
-    #     };
-    #     return newAction;
-    # }
     def copy(self) -> 'Action':
         """
         Makes a copy of the action.
@@ -4266,42 +2984,18 @@ class Action:
         new_action._parameters = DictionaryExtensionMethods.copy_dict(self._parameters) # Set after init
         return new_action
 
-    # /// <summary>
-    # /// Sets a parameter to the action.
-    # /// </summary>
-    # public void SetParameter(string key, object value) {
-    #     parameters[key] = value;
-    # }
     def set_parameter(self, key: str, value: Any) -> None:
         """
         Sets a parameter to the action.
         """
         self._parameters[key] = value
 
-    # /// <summary>
-    # /// Gets a parameter to the action.
-    # /// </summary>
-    # public object? GetParameter(string key) {
-    #     if (parameters.ContainsKey(key)) return parameters[key];
-    #     return null;
-    # }
     def get_parameter(self, key: str) -> Optional[Any]:
         """
         Gets a parameter to the action.
         """
         return self._parameters.get(key)
 
-    # /// <summary>
-    # /// Gets the cost of the action.
-    # /// </summary>
-    # public float GetCost(ConcurrentDictionary<string, object?> currentState) {
-    #     try {
-    #         return costCallback(this, currentState);
-    #     }
-    #     catch {
-    #         return float.MaxValue;
-    #     }
-    # }
     def get_cost(self, current_state: StateDictionary) -> float:
         """
         Gets the cost of the action.
@@ -4311,23 +3005,6 @@ class Action:
         except Exception:
             return float('inf') # float.MaxValue in C#
 
-    # /// <summary>
-    # /// Executes a step of work for the agent.
-    # /// </summary>
-    # internal ExecutionStatus Execute(Agent agent) {
-    #     OnBeginExecuteAction(agent, this, parameters);
-    #     if (IsPossible(agent.State)) {
-    #         var newState = executor(agent, this);
-    #         if (newState == ExecutionStatus.Succeeded) ApplyEffects(agent.State);
-    #         ExecutionStatus = newState;
-    #         OnFinishExecuteAction(agent, this, ExecutionStatus, parameters);
-    #         return newState;
-    #     }
-    #     else {
-    #         OnFinishExecuteAction(agent, this, ExecutionStatus.NotPossible, parameters);
-    #         return ExecutionStatus.NotPossible;
-    #     }
-    # }
     def execute(self, agent: 'Agent') -> ExecutionStatus:
         """
         Executes a step of work for the agent.
@@ -4348,30 +3025,6 @@ class Action:
             Action.OnFinishExecuteAction(agent, self, self.ExecutionStatus, self._parameters)
             return ExecutionStatus.NotPossible
 
-    # /// <summary>
-    # /// Determines whether or not an action is possible.
-    # /// </summary>
-    # internal bool IsPossible(ConcurrentDictionary<string, object?> state) {
-    #     foreach (var kvp in preconditions) {
-    #         if (!state.ContainsKey(kvp.Key)) return false;
-    #         if (state[kvp.Key] == null && state[kvp.Key] != kvp.Value) return false;
-    #         else if (state[kvp.Key] == null && state[kvp.Key] == kvp.Value) continue;
-    #         if (state[kvp.Key] is object obj && !obj.Equals(kvp.Value)) return false;
-    #     }
-    #     foreach (var kvp in comparativePreconditions) {
-    #         if (!state.ContainsKey(kvp.Key)) return false;
-    #         if (state[kvp.Key] == null) return false;
-    #         if (state[kvp.Key] is object obj && kvp.Value.Value is object obj2) {
-    #             if (kvp.Value.Operator == ComparisonOperator.LessThan && !Utils.IsLowerThan(obj, obj2)) return false;
-    #             else if (kvp.Value.Operator == ComparisonOperator.GreaterThan && !Utils.IsHigherThan(obj, obj2)) return false;
-    #             else if (kvp.Value.Operator == ComparisonOperator.LessThanOrEquals && !Utils.IsLowerThanOrEquals(obj, obj2)) return false;
-    #             else if (kvp.Value.Operator == ComparisonOperator.GreaterThanOrEquals && !Utils.IsHigherThanOrEquals(obj, obj2)) return false;
-    #         }
-    #         else return false;
-    #     }
-    #     if (stateChecker?.Invoke(this, state) == false) return false;
-    #     return true;
-    # }
     def is_possible(self, state: StateDictionary) -> bool:
         """
         Determines whether or not an action is possible.
@@ -4425,32 +3078,6 @@ class Action:
             return False
         return True
 
-    # /// <summary>
-    # /// Gets all permutations of parameters possible for an action.
-    # /// </summary>
-    # internal List<Dictionary<string, object?>> GetPermutations(ConcurrentDictionary<string, object?> state) {
-    #     List<Dictionary<string, object?>> combinedOutputs = new();
-    #     Dictionary<string, List<object>> outputs = new();
-    #     foreach (var kvp in permutationSelectors) outputs[kvp.Key] = kvp.Value(state);
-    #     var permutationParameters = outputs.Keys.ToList();
-    #     List<int> indices = new();
-    #     List<int> counts = new();
-    #     foreach (var parameter in permutationParameters) {
-    #         indices.Add(0);
-    #         if (outputs[parameter].Count == 0) return combinedOutputs;
-    #         counts.Add(outputs[parameter].Count);
-    #     }
-    #     while (true) {
-    #         var singleOutput = new Dictionary<string, object?>();
-    #         for (int i = 0; i < indices.Count; i++) {
-    #             if (indices[i] >= outputs[permutationParameters[i]].Count) continue;
-    #             singleOutput[permutationParameters[i]] = outputs[permutationParameters[i]][indices[i]];
-    #         }
-    #         combinedOutputs.Add(singleOutput);
-    #         if (IndicesAtMaximum(indices, counts)) return combinedOutputs;
-    #         IncrementIndices(indices, counts);
-    #     }
-    # }
     def get_permutations(self, state: StateDictionary) -> List[Dict[str, Optional[Any]]]:
         """
         Gets all permutations of parameters possible for an action.
@@ -4488,26 +3115,6 @@ class Action:
             
             Action._increment_indices(indices, counts)
 
-    # /// <summary>
-    # /// Applies the effects of the action.
-    # /// </summary>
-    # internal void ApplyEffects(ConcurrentDictionary<string, object?> state) {
-    #     foreach (var kvp in postconditions) state[kvp.Key] = kvp.Value;
-    #     foreach (var kvp in arithmeticPostconditions) {
-    #         if (!state.ContainsKey(kvp.Key)) continue;
-    #         if (state[kvp.Key] is int stateInt && kvp.Value is int conditionInt) state[kvp.Key] = stateInt + conditionInt;
-    #         else if (state[kvp.Key] is float stateFloat && kvp.Value is float conditionFloat) state[kvp.Key] = stateFloat + conditionFloat;
-    #         else if (state[kvp.Key] is double stateDouble && kvp.Value is double conditionDouble) state[kvp.Key] = stateDouble + conditionDouble;
-    #         else if (state[kvp.Key] is long stateLong && kvp.Value is long conditionLong) state[kvp.Key] = stateLong + conditionLong;
-    #         else if (state[kvp.Key] is decimal stateDecimal && kvp.Value is decimal conditionDecimal) state[kvp.Key] = stateDecimal + conditionDecimal;
-    #         else if (state[kvp.Key] is DateTime stateDateTime && kvp.Value is TimeSpan conditionTimeSpan) state[kvp.Key] = stateDateTime + conditionTimeSpan;
-    #     }
-    #     foreach (var kvp in parameterPostconditions) {
-    #         if (!parameters.ContainsKey(kvp.Key)) continue;
-    #         state[kvp.Value] = parameters[kvp.Key];
-    #     }
-    #     stateMutator?.Invoke(this, state);
-    # }
     def apply_effects(self, state: StateDictionary) -> None:
         """
         Applies the effects of the action.
@@ -4546,22 +3153,12 @@ class Action:
         if self._state_mutator is not None:
             self._state_mutator(self, state)
 
-    # /// <summary>
-    # /// Sets all parameters to the action.
-    # /// </summary>
-    # internal void SetParameters(Dictionary<string, object?> parameters) {
-    #     this.parameters = parameters;
-    # }
     def set_parameters(self, parameters: Dict[str, Optional[Any]]) -> None:
         """
         Sets all parameters to the action.
         """
         self._parameters = parameters
 
-    # private static bool IndicesAtMaximum(List<int> indices, List<int> counts) {
-    #     for (int i = 0; i < indices.Count; i++) if (indices[i] < counts[i] - 1) return false;
-    #     return true;
-    # }
     @staticmethod
     def _indices_at_maximum(indices: List[int], counts: List[int]) -> bool:
         """
@@ -4572,16 +3169,6 @@ class Action:
                 return False
         return True
 
-    # private static void IncrementIndices(List<int> indices, List<int> counts) {
-    #     if (IndicesAtMaximum(indices, counts)) return;
-    #     for (int i = 0; i < indices.Count; i++) {
-    #         if (indices[i] == counts[i] - 1) indices[i] = 0;
-    #         else {
-    #             indices[i]++;
-    #             return;
-    #         }
-    #     }
-    # }
     @staticmethod
     def _increment_indices(indices: List[int], counts: List[int]) -> None:
         """
@@ -4649,78 +3236,31 @@ from .Events.EvaluatedActionNodeEvent import EvaluatedActionNodeEvent
 # A type alias for the state dictionary
 StateDictionary = Dict[str, Optional[Any]]
 
-# /// <summary>
-# /// GOAP agent.
-# /// </summary>
 class Agent:
     """
     GOAP agent.
     """
 
-    # /// <summary>
-    # /// Name of the agent.
-    # /// </summary>
-    # public readonly string Name;
     Name: str
 
-    # /// <summary>
-    # /// Gets the chains of actions currently being performed by the agent.
-    # /// </summary>
-    # public List<List<Action>> CurrentActionSequences { get; } = new();
     CurrentActionSequences: List[List[Action]]
 
-    # /// <summary>
-    # /// Gets or sets the current world state from the agent perspective.
-    # /// </summary>
-    # public ConcurrentDictionary<string, object?> State { get; set; } = new();
     State: StateDictionary
 
-    # /// <summary>
-    # /// Gets or sets the memory storage object for the agent.
-    # /// </summary>
-    # public Dictionary<string, object?> Memory { get; set; } = new();
     Memory: Dict[str, Optional[Any]]
 
-    # /// <summary>
-    # /// Gets or sets the list of active goals for the agent.
-    # /// </summary>
-    # public List<BaseGoal> Goals { get; set; } = new();
     Goals: List[BaseGoal]
 
-    # /// <summary>
-    # /// Gets or sets the actions available to the agent.
-    # /// </summary>
-    # public List<Action> Actions { get; set; } = new();
     Actions: List[Action]
 
-    # /// <summary>
-    # /// Gets or sets the sensors available to the agent.
-    # /// </summary>
-    # public List<Sensor> Sensors { get; set; } = new();
     Sensors: List[Sensor]
 
-    # /// <summary>
-    # /// Gets or sets the plan cost maximum for the agent.
-    # /// </summary>
-    # public float CostMaximum { get; set; }
     CostMaximum: float
 
-    # /// <summary>
-    # /// Gets or sets the step maximum for the agent.
-    # /// </summary>
-    # public int StepMaximum { get; set; }
     StepMaximum: int
 
-    # /// <summary>
-    # /// Gets or sets a value indicating whether the agent is currently executing one or more actions.
-    # /// </summary>
-    # public bool IsBusy { get; set; } = false;
     IsBusy: bool = False
 
-    # /// <summary>
-    # /// Gets or sets a value indicating whether the agent is currently planning.
-    # /// </summary>
-    # public bool IsPlanning { get; set; } = false;
     IsPlanning: bool = False
 
     # Events (class attributes, handlers stored in lists)
@@ -4793,19 +3333,6 @@ class Agent:
     def register_on_evaluated_action_node(cls, handler: EvaluatedActionNodeEvent): cls._on_evaluated_action_node_handlers.append(handler)
 
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="Agent"/> class.
-    # /// </summary>
-    # public Agent(string? name = null, ConcurrentDictionary<string, object?>? state = null, Dictionary<string, object?>? memory = null, List<BaseGoal>? goals = null, List<Action>? actions = null, List<Sensor>? sensors = null, float costMaximum = float.MaxValue, int stepMaximum = int.MaxValue) {
-    #     Name = name ?? $"Agent {Guid.NewGuid()}";
-    #     if (state != null) State = state;
-    #     if (memory != null) Memory = memory;
-    #     if (goals != null) Goals = goals;
-    #     if (actions != null) Actions = actions;
-    #     if (sensors != null) Sensors = sensors;
-    #     CostMaximum = costMaximum;
-    #     StepMaximum = stepMaximum;
-    # }
     def __init__(self,
                  name: Optional[str] = None,
                  state: Optional[StateDictionary] = None,
@@ -4833,20 +3360,6 @@ class Agent:
         self.IsPlanning = False
 
 
-    # /// <summary>
-    # /// You should call this every time your game state updates.
-    # /// </summary>
-    # public void Step(StepMode mode = StepMode.Default) {
-    #     OnAgentStep(this);
-    #     foreach (var sensor in Sensors) sensor.Run(this);
-    #     if (mode == StepMode.Default) {
-    #         StepAsync();
-    #         return;
-    #     }
-    #     if (!IsBusy) Planner.Plan(this, CostMaximum, StepMaximum);
-    #     if (mode == StepMode.OneAction) Execute();
-    #     else if (mode == StepMode.AllActions) while (IsBusy) Execute();
-    # }
     def step(self, mode: StepMode = StepMode.Default) -> None:
         """
         You should call this every time your game state updates.
@@ -4872,27 +3385,12 @@ class Agent:
                 # If a plan is exhausted, IsBusy will be False.
 
 
-    # /// <summary>
-    # /// Clears the current action sequences (also known as plans).
-    # /// </summary>
-    # public void ClearPlan() {
-    #     CurrentActionSequences.Clear();
-    # }
     def clear_plan(self) -> None:
         """
         Clears the current action sequences (also known as plans).
         """
         self.CurrentActionSequences.clear()
 
-    # /// <summary>
-    # /// Makes a plan.
-    # /// </summary>
-    # public void Plan() {
-    #     if (!IsBusy && !IsPlanning) {
-    #         IsPlanning = true;
-    #         Planner.Plan(this, CostMaximum, StepMaximum);
-    #     }
-    # }
     def plan(self) -> None:
         """
         Makes a plan.
@@ -4901,16 +3399,6 @@ class Agent:
             self.IsPlanning = True
             Planner.plan(self, self.CostMaximum, self.StepMaximum)
 
-    # /// <summary>
-    # /// Makes a plan asynchronously.
-    # /// </summary>
-    # public void PlanAsync() {
-    #     if (!IsBusy && !IsPlanning) {
-    #         IsPlanning = true;
-    #         var t = new Thread(new ThreadStart(() => { Planner.Plan(this, CostMaximum, StepMaximum); }));
-    #         t.Start();
-    #     }
-    # }
     def plan_async(self) -> None:
         """
         Makes a plan asynchronously.
@@ -4920,12 +3408,6 @@ class Agent:
             thread = threading.Thread(target=Planner.plan, args=(self, self.CostMaximum, self.StepMaximum))
             thread.start()
 
-    # /// <summary>
-    # /// Executes the current plan.
-    # /// </summary>
-    # public void ExecutePlan() {
-    #     if (!IsPlanning) Execute();
-    # }
     def execute_plan(self) -> None:
         """
         Executes the current plan.
@@ -4933,26 +3415,6 @@ class Agent:
         if not self.IsPlanning:
             self._execute()
 
-    # /// <summary>
-    # /// Triggers OnPlanningStarted event.
-    # /// </summary>
-    # internal static void TriggerOnPlanningStarted(Agent agent) {
-    #     OnPlanningStarted(agent);
-    # }
-    # These static trigger methods are replaced by direct calls to the classmethod On... methods.
-    # For external modules, they would call Agent.OnPlanningStarted(agent) etc.
-
-    # /// <summary>
-    # /// Executes an asynchronous step of agent work.
-    # /// </summary>
-    # private void StepAsync() {
-    #     if (!IsBusy && !IsPlanning) {
-    #         IsPlanning = true;
-    #         var t = new Thread(new ThreadStart(() => { Planner.Plan(this, CostMaximum, StepMaximum); }));
-    #         t.Start();
-    #     }
-    #     else if (!IsPlanning) Execute();
-    # }
     def _step_async(self) -> None:
         """
         Executes an asynchronous step of agent work.
@@ -4964,26 +3426,6 @@ class Agent:
         elif not self.IsPlanning:
             self._execute()
 
-    # /// <summary>
-    # /// Executes the current action sequences.
-    # /// </summary>
-    # private void Execute() {
-    #     if (CurrentActionSequences.Count > 0) {
-    #         List<List<Action>> cullableSequences = new();
-    #         foreach (var sequence in CurrentActionSequences) {
-    #             if (sequence.Count > 0) {
-    #                 var executionStatus = sequence[0].Execute(this);
-    #                 if (executionStatus != ExecutionStatus.Executing) sequence.RemoveAt(0);
-    #             }
-    #             else cullableSequences.Add(sequence);
-    #         }
-    #         foreach (var sequence in cullableSequences) {
-    #             CurrentActionSequences.Remove(sequence);
-    #             OnAgentActionSequenceCompleted(this);
-    #         }
-    #     }
-    #     else IsBusy = false;
-    # }
     def _execute(self) -> None:
         """
         Executes the current action sequences.
@@ -5025,24 +3467,13 @@ from typing import Optional, List
 from .CallbackDelegates.SensorRunCallback import SensorRunCallback
 from .Events.SensorRunningEvent import SensorRunEvent # Changed name from SensorRunningEvent.cs to match usage
 
-# /// <summary>
-# /// Sensor for getting information about world state.
-# /// </summary>
 class Sensor:
     """
     Sensor for getting information about world state.
     """
 
-    # /// <summary>
-    # /// Name of the sensor.
-    # /// </summary>
-    # public readonly string Name;
     Name: str
 
-    # /// <summary>
-    # /// Callback to be executed when the sensor runs.
-    # /// </summary>
-    # private readonly SensorRunCallback runCallback;
     _run_callback: SensorRunCallback
 
     # Events (static in C#)
@@ -5058,13 +3489,6 @@ class Sensor:
         cls._on_sensor_run_handlers.append(handler)
 
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="Sensor"/> class.
-    # /// </summary>
-    # public Sensor(SensorRunCallback runCallback, string? name = null) {
-    #     Name = name ?? $"Sensor {Guid.NewGuid()} ({runCallback.GetMethodInfo().Name})";
-    #     this.runCallback = runCallback;
-    # }
     def __init__(self, run_callback: SensorRunCallback, name: Optional[str] = None):
         """
         Initializes a new instance of the Sensor class.
@@ -5075,13 +3499,6 @@ class Sensor:
         self.Name = name if name is not None else f"Sensor {uuid.uuid4()} ({callback_name})"
         self._run_callback = run_callback
 
-    # /// <summary>
-    # /// Runs the sensor during a game loop.
-    # /// </summary>
-    # public void Run(Agent agent) {
-    #     OnSensorRun(agent, this);
-    #     runCallback(agent);
-    # }
     def run(self, agent: 'Agent') -> None:
         """
         Runs the sensor during a game loop.
@@ -5113,24 +3530,11 @@ T = TypeVar('T')
 StateDictionary = Dict[str, Optional[Any]]
 
 
-# /// <summary>
-# /// Generators for default permutation selectors for convenience.
-# /// </summary>
 class PermutationSelectorGenerators:
     """
     Generators for default permutation selectors for convenience.
     """
 
-    # /// <summary>
-    # /// Generates a permutation selector that returns all elements of an enumerable.
-    # /// </summary>
-    # public static PermutationSelectorCallback SelectFromCollection<T>(IEnumerable<T> values) {
-    #     return (ConcurrentDictionary<string, object?> state) => {
-    #         List<object> output = new();
-    #         foreach (var item in values) if (item is not null) output.Add(item);
-    #         return output;
-    #     };
-    # }
     @staticmethod
     def select_from_collection(values: Iterable[T]) -> PermutationSelectorCallback:
         """
@@ -5144,17 +3548,6 @@ class PermutationSelectorGenerators:
             return output
         return selector
 
-    # /// <summary>
-    # /// Generates a permutation selector that returns all elements of an enumerable within the agent state.
-    # /// </summary>
-    # public static PermutationSelectorCallback SelectFromCollectionInState<T>(string key) {
-    #     return (ConcurrentDictionary<string, object?> state) => {
-    #         List<object> output = new();
-    #         if (state[key] is not IEnumerable<T> values) return output;
-    #         foreach (var item in values) if (item is not null) output.Add(item);
-    #         return output;
-    #     };
-    # }
     @staticmethod
     def select_from_collection_in_state(key: str) -> PermutationSelectorCallback:
         """
@@ -5170,16 +3563,6 @@ class PermutationSelectorGenerators:
             return output
         return selector
 
-    # /// <summary>
-    # /// Generates a permutation selector that returns all integer elements in a range.
-    # /// </summary>
-    # public static PermutationSelectorCallback SelectFromIntegerRange(int lowerBound, int upperBound) {
-    #     return (ConcurrentDictionary<string, object?> state) => {
-    #         List<object> output = new();
-    #         for (int i = lowerBound; i < upperBound; i++) output.Add(i);
-    #         return output;
-    #     };
-    # }
     @staticmethod
     def select_from_integer_range(lower_bound: int, upper_bound: int) -> PermutationSelectorCallback:
         """
@@ -5213,29 +3596,13 @@ if TYPE_CHECKING:
 # A type alias for the state dictionary
 StateDictionary = Dict[str, Optional[Any]]
 
-# /// <summary>
-# /// Represents a traversable action graph.
-# /// </summary>
 class ActionGraph:
     """
     Represents a traversable action graph.
     """
 
-    # /// <summary>
-    # /// The set of actions for the graph.
-    # /// </summary>
-    # internal List<ActionNode> ActionNodes = new();
     ActionNodes: List[ActionNode]
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="ActionGraph"/> class.
-    # /// </summary>
-    # internal ActionGraph(List<Action> actions, ConcurrentDictionary<string, object?> state) {
-    #     foreach (var action in actions) {
-    #         var permutations = action.GetPermutations(state);
-    #         foreach (var permutation in permutations) ActionNodes.Add(new(action, state, permutation));
-    #     }
-    # }
     def __init__(self, actions: List['Action'], state: StateDictionary):
         """
         Initializes a new instance of the ActionGraph class.
@@ -5255,18 +3622,6 @@ class ActionGraph:
                 # The ActionNode constructor already handles copying the action.
                 self.ActionNodes.append(ActionNode(action, state, permutation))
 
-    # /// <summary>
-    # /// Gets the list of neighbors for a node.
-    # /// </summary>
-    # internal IEnumerable<ActionNode> Neighbors(ActionNode node) {
-    #     foreach (var otherNode in ActionNodes) {
-    #         if (otherNode.Action is not null && otherNode.Action.IsPossible(node.State)) {
-    #             var newNode = new ActionNode(otherNode.Action.Copy(), node.State.Copy(), otherNode.Parameters.Copy());
-    #             newNode.Action?.ApplyEffects(newNode.State);
-    #             yield return newNode;
-    #         }
-    #     }
-    # }
     def neighbors(self, node: ActionNode) -> Iterable[ActionNode]:
         """
         Gets the list of neighbors for a node.
@@ -5324,75 +3679,21 @@ from .Utils import Utils
 # A type alias for the state dictionary
 StateDictionary = Dict[str, Optional[Any]]
 
-# /// <summary>
-# /// AStar calculator for an action graph.
-# /// </summary>
 class ActionAStar:
     """
     AStar calculator for an action graph.
     """
 
-    # /// <summary>
-    # /// Final point at which the calculation arrived.
-    # /// </summary>
-    # internal readonly ActionNode? FinalPoint = null;
     FinalPoint: Optional[ActionNode] = None
 
-    # /// <summary>
-    # /// Cost so far to get to each node.
-    # /// </summary>
-    # internal readonly ConcurrentDictionary<ActionNode, float> CostSoFar = new();
     CostSoFar: Dict[ActionNode, float] = {} # Using standard dict for simplicity in Python
 
-    # /// <summary>
-    # /// Steps so far to get to each node.
-    # /// </summary>
-    # internal readonly ConcurrentDictionary<ActionNode, int> StepsSoFar = new();
     StepsSoFar: Dict[ActionNode, int] = {} # Using standard dict for simplicity in Python
 
-    # /// <summary>
-    # /// Dictionary giving the path from start to goal.
-    # /// </summary>
-    # internal readonly ConcurrentDictionary<ActionNode, ActionNode> CameFrom = new();
     CameFrom: Dict[ActionNode, ActionNode] = {} # Using standard dict for simplicity in Python
 
-    # /// <summary>
-    # /// Goal state that AStar is trying to achieve.
-    # /// </summary>
-    # private readonly BaseGoal goal;
     _goal: BaseGoal
 
-    # /// <summary>
-    # /// Initializes a new instance of the <see cref="ActionAStar"/> class.
-    # /// </summary>
-    # internal ActionAStar(ActionGraph graph, ActionNode start, BaseGoal goal, float costMaximum, int stepMaximum) {
-    #     this.goal = goal;
-    #     FastPriorityQueue<ActionNode> frontier = new(100000);
-    #     frontier.Enqueue(start, 0);
-    #     CameFrom[start] = start;
-    #     CostSoFar[start] = 0;
-    #     StepsSoFar[start] = 0;
-    #     while (frontier.Count > 0) {
-    #         var current = frontier.Dequeue();
-    #         if (MeetsGoal(current, start)) {
-    #             FinalPoint = current;
-    #             break;
-    #         }
-    #         foreach (var next in graph.Neighbors(current)) {
-    #             float newCost = CostSoFar[current] + next.Cost(current.State);
-    #             int newStepCount = StepsSoFar[current] + 1;
-    #             if (newCost > costMaximum || newStepCount > stepMaximum) continue;
-    #             if (!CostSoFar.ContainsKey(next) || newCost < CostSoFar[next]) {
-    #                 CostSoFar[next] = newCost;
-    #                 StepsSoFar[next] = newStepCount;
-    #                 float priority = newCost + Heuristic(next, goal, current);
-    #                 frontier.Enqueue(next, priority);
-    #                 CameFrom[next] = current;
-    #                 Agent.TriggerOnEvaluatedActionNode(next, CameFrom);
-    #             }
-    #         }
-    #     }
-    # }
     def __init__(self, graph: ActionGraph, start: ActionNode, goal: BaseGoal, cost_maximum: float, step_maximum: int):
         """
         Initializes a new instance of the ActionAStar class.
@@ -5448,47 +3749,6 @@ class ActionAStar:
                     self.CameFrom[next_node] = current
                     Agent.OnEvaluatedActionNode(next_node, self.CameFrom) # Trigger static event
 
-    # private static float Heuristic(ActionNode actionNode, BaseGoal goal, ActionNode current) {
-    #     var cost = 0f;
-    #     if (goal is Goal normalGoal) {
-    #         normalGoal.DesiredState.Select(kvp => kvp.Key).ToList().ForEach(key => {
-    #             if (!actionNode.State.ContainsKey(key)) cost++;
-    #             else if (actionNode.State[key] == null && actionNode.State[key] != normalGoal.DesiredState[key]) cost++;
-    #             else if (actionNode.State[key] is object obj && !obj.Equals(normalGoal.DesiredState[key])) cost++;
-    #         });
-    #     }
-    #     else if (goal is ExtremeGoal extremeGoal) {
-    #         foreach (var kvp in extremeGoal.DesiredState) {
-    #             var valueDiff = 0f;
-    #             var valueDiffMultiplier = (actionNode?.Action?.StateCostDeltaMultiplier ?? Action.DefaultStateCostDeltaMultiplier).Invoke(actionNode?.Action, kvp.Key);
-    #             if (actionNode.State.ContainsKey(kvp.Key) && actionNode.State[kvp.Key] == null) {
-    #                 cost += float.PositiveInfinity;
-    #                 continue;
-    #             }
-    #             if (actionNode.State.ContainsKey(kvp.Key) && extremeGoal.DesiredState.ContainsKey(kvp.Key)) valueDiff = Convert.ToSingle(actionNode.State[kvp.Key]) - Convert.ToSingle(current.State[kvp.Key]);
-    #             if (!actionNode.State.ContainsKey(kvp.Key)) cost += float.PositiveInfinity;
-    #             else if (!current.State.ContainsKey(kvp.Key)) cost += float.PositiveInfinity;
-    #             else if (!kvp.Value && actionNode.State[kvp.Key] is object a && current.State[kvp.Key] is object b && IsLowerThanOrEquals(a, b)) cost += valueDiff * valueDiffMultiplier;
-    #             else if (kvp.Value && actionNode.State[kvp.Key] is object a2 && current.State[kvp.Key] is object b2 && IsHigherThanOrEquals(a2, b2)) cost -= valueDiff * valueDiffMultiplier;
-    #         }
-    #     }
-    #     else if (goal is ComparativeGoal comparativeGoal) {
-    #         foreach (var kvp in comparativeGoal.DesiredState) {
-    #             var valueDiff2 = 0f;
-    #             var valueDiffMultiplier = (actionNode?.Action?.StateCostDeltaMultiplier ?? Action.DefaultStateCostDeltaMultiplier).Invoke(actionNode?.Action, kvp.Key);
-    #             if (actionNode.State.ContainsKey(kvp.Key) && comparativeGoal.DesiredState.ContainsKey(kvp.Key)) valueDiff2 = Math.Abs(Convert.ToSingle(actionNode.State[kvp.Key]) - Convert.ToSingle(current.State[kvp.Key]));
-    #             if (!actionNode.State.ContainsKey(kvp.Key)) cost += float.PositiveInfinity;
-    #             else if (!current.State.ContainsKey(kvp.Key)) cost += float.PositiveInfinity;
-    #             else if (kvp.Value.Operator == ComparisonOperator.Undefined) cost += float.PositiveInfinity;
-    #             else if (kvp.Value.Operator == ComparisonOperator.Equals && actionNode.State[kvp.Key] is object obj && !obj.Equals(comparativeGoal.DesiredState[kvp.Key].Value)) cost += valueDiff2 * valueDiffMultiplier;
-    #             else if (kvp.Value.Operator == ComparisonOperator.LessThan && actionNode.State[kvp.Key] is object a && comparativeGoal.DesiredState[kvp.Key].Value is object b && !IsLowerThan(a, b)) cost += valueDiff2 * valueDiffMultiplier;
-    #             else if (kvp.Value.Operator == ComparisonOperator.GreaterThan && actionNode.State[kvp.Key] is object a2 && comparativeGoal.DesiredState[kvp.Key].Value is object b2 && !IsHigherThan(a2, b2)) cost += valueDiff2 * valueDiffMultiplier;
-    #             else if (kvp.Value.Operator == ComparisonOperator.LessThanOrEquals && actionNode.State[kvp.Key] is object a3 && comparativeGoal.DesiredState[kvp.Key].Value is object b3 && !IsLowerThanOrEquals(a3, b3)) cost += valueDiff2 * valueDiffMultiplier;
-    #             else if (kvp.Value.Operator == ComparisonOperator.GreaterThanOrEquals && actionNode.State[kvp.Key] is object a4 && comparativeGoal.DesiredState[kvp.Key].Value is object b4 && !IsHigherThanOrEquals(a4, b4)) cost += valueDiff2 * valueDiffMultiplier;
-    #         }
-    #     }
-    #     return cost;
-    # }
     def _heuristic(self, action_node: ActionNode, goal: BaseGoal, previous_node_in_path: ActionNode) -> float:
         """
         Calculates the heuristic cost from actionNode.State to the goal.
@@ -5536,8 +3796,7 @@ class ActionAStar:
                     if Utils.is_lower_than_or_equals(current_val, prev_val):
                         # Not improving or getting worse, penalize.
                         # C# `cost -= valueDiff * valueDiffMultiplier;` for maximize when is_higher_than_or_equals
-                        # This seems to be `current_val >= prev_val` then cost -= (current-prev)*mult,
-                        # which means if current > prev, (current-prev) is positive, so cost reduces.
+                        # This means if current > prev, (current-prev) is positive, so cost reduces.
                         # If current == prev, (current-prev) is 0, no change.
                         # If current < prev, (current-prev) is negative, so cost increases.
                         # This means it's a "reward" for moving in the right direction.
@@ -5594,16 +3853,6 @@ class ActionAStar:
                 # It's the absolute change from previous state. This seems more like a penalty for *change* rather than *distance to goal*.
                 # Let's re-interpret this as a "cost" of not meeting the goal from the new state.
                 # If the goal is NOT met, then add a penalty.
-                # The valueDiff2 calculation in C# seems to be about the magnitude of change *between* states, not distance to goal.
-                # Replicating this strictly for verbatim.
-                value_diff_from_previous_step = 0.0
-                if current_val is not None and previous_node_in_path.State.get(key) is not None:
-                    try:
-                        value_diff_from_previous_step = abs(float(current_val) - float(previous_node_in_path.State[key]))
-                    except (ValueError, TypeError):
-                        pass # Cannot calculate numeric diff, leave as 0 or handle as error
-
-                # If the comparison isn't met, add a cost.
                 # The C# heuristic adds `valueDiff2 * valueDiffMultiplier` when the goal is NOT met.
                 # This suggests the heuristic is a measure of "how much work is still needed, or how badly this step moved away".
                 # For `Equals`, if not equal, it penalizes.
@@ -5626,12 +3875,6 @@ class ActionAStar:
                         cost += value_diff_from_previous_step * value_diff_multiplier
         return cost
 
-    # Private helper methods from Utils in C# are directly called by Utils.method_name
-    # private static bool IsLowerThan(object a, object b) { ... } -> Utils.is_lower_than(a,b)
-    # private static bool IsHigherThan(object a, object b) { ... } -> Utils.is_higher_than(a,b)
-    # private static bool IsLowerThanOrEquals(object a, object b) { ... } -> Utils.is_lower_than_or_equals(a,b)
-    # private static bool IsHigherThanOrEquals(object a, object b) { ... } -> Utils.is_higher_than_or_equals(a,b)
-    # private bool MeetsGoal(ActionNode actionNode, ActionNode current) { ... } -> self._meets_goal(action_node, current)
     def _meets_goal(self, action_node: ActionNode, previous_node_in_path: ActionNode) -> bool:
         """
         Indicates whether or not a goal is met by an action node.
@@ -5658,46 +3901,11 @@ from ..Agent import Agent # Circular import, handled by local import/type checki
 from ..Action import Action
 from ..BaseGoal import BaseGoal
 
-# /// <summary>
-# /// Planner for an agent.
-# /// </summary>
 class Planner:
     """
     Planner for an agent.
     """
 
-    # /// <summary>
-    # /// Makes a plan to achieve the agent's goals.
-    # /// </summary>
-    # internal static void Plan(Agent agent, float costMaximum, int stepMaximum) {
-    #     Agent.TriggerOnPlanningStarted(agent);
-    #     float bestPlanUtility = 0;
-    #     ActionAStar? astar;
-    #     ActionNode? cursor;
-    #     ActionAStar? bestAstar = null;
-    #     BaseGoal? bestGoal = null;
-    #     foreach (var goal in agent.Goals) {
-    #         Agent.TriggerOnPlanningStartedForSingleGoal(agent, goal);
-    #         ActionGraph graph = new(agent.Actions, agent.State);
-    #         ActionNode start = new(null, agent.State, new());
-    #         astar = new(graph, start, goal, costMaximum, stepMaximum);
-    #         cursor = astar.FinalPoint;
-    #         if (cursor is not null && astar.CostSoFar[cursor] == 0) Agent.TriggerOnPlanningFinishedForSingleGoal(agent, goal, 0);
-    #         else if (cursor is not null) Agent.TriggerOnPlanningFinishedForSingleGoal(agent, goal, goal.Weight / astar.CostSoFar[cursor]);
-    #         if (cursor is not null && cursor.Action is not null && astar.CostSoFar.ContainsKey(cursor) && goal.Weight / astar.CostSoFar[cursor] > bestPlanUtility) {
-    #             bestPlanUtility = goal.Weight / astar.CostSoFar[cursor];
-    #             bestAstar = astar;
-    #             bestGoal = goal;
-    #         }
-    #     }
-    #     if (bestPlanUtility > 0 && bestAstar is not null && bestGoal is not null && bestAstar.FinalPoint is not null) {
-    #         UpdateAgentActionList(bestAstar.FinalPoint, bestAstar, agent);
-    #         agent.IsBusy = true;
-    #         Agent.TriggerOnPlanningFinished(agent, bestGoal, bestPlanUtility);
-    #     }
-    #     else Agent.TriggerOnPlanningFinished(agent, null, 0);
-    #     agent.IsPlanning = false;
-    # }
     @staticmethod
     def plan(agent: 'Agent', cost_maximum: float, step_maximum: int) -> None:
         """
@@ -5768,20 +3976,6 @@ class Planner:
 
         agent.IsPlanning = False # Planning is complete
 
-    # /// <summary>
-    # /// Updates the agent action list with the new plan. Only supports executing one sequence of events at a time for now.
-    # /// </summary>
-    # private static void UpdateAgentActionList(ActionNode start, ActionAStar astar, Agent agent) {
-    #     ActionNode? cursor = start;
-    #     List<Action> actionList = new();
-    #     while (cursor != null && cursor.Action != null && astar.CameFrom.ContainsKey(cursor)) {
-    #         actionList.Add(cursor.Action);
-    #         cursor = astar.CameFrom[cursor];
-    #     }
-    #     actionList.Reverse();
-    #     agent.CurrentActionSequences.Add(actionList);
-    #     Agent.TriggerOnPlanUpdated(agent, actionList);
-    # }
     @staticmethod
     def _update_agent_action_list(start_node: ActionNode, astar: ActionAStar, agent: 'Agent') -> None:
         """
@@ -5840,7 +4034,7 @@ class DefaultLogger:
     def __init__(self, log_to_console: bool = True, logging_file: Optional[str] = None):
         # Configure basic logging. In a real application, you might want more sophisticated setup.
         # Python's logging.Logger is not directly analogous to Serilog.Core.Logger
-        # Serilog.Core.Logger configures sinks, while Python's Logger manages handlers.
+        # Serilog's Logger configures sinks, while Python's Logger manages handlers.
         self.logger = logging.getLogger("MountainGoapLogger")
         self.logger.setLevel(logging.INFO)
         # Prevent adding handlers multiple times if instantiated repeatedly
@@ -6035,54 +4229,6 @@ class ActionContinuationTests:
     def _fixture_setup(self, setup_teardown_events):
         pass
 
-    # [Fact]
-    # public void ItCanContinueActions() {
-    #     var timesExecuted = 0;
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", false },
-    #             { "progress", 0 }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", true }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", false }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", true }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     timesExecuted++;
-    #                     if (agent.State["progress"] is int progress && progress < 3) {
-    #                         agent.State["progress"] = progress + 1;
-    #                         return ExecutionStatus.Executing;
-    #                     }
-    #                     else return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     if (agent.State["key"] is bool value) Assert.False(value);
-    #     else Assert.False(true);
-    #     agent.Step(StepMode.OneAction);
-    #     if (agent.State["key"] is bool value2) Assert.False(value2);
-    #     else Assert.False(true);
-    #     agent.Step(StepMode.OneAction);
-    #     if (agent.State["key"] is bool value3) Assert.False(value3);
-    #     else Assert.False(true);
-    #     agent.Step(StepMode.OneAction);
-    #     if (agent.State["key"] is bool value4) Assert.True(value4);
-    #     else Assert.False(true);
-    #     Assert.Equal(4, timesExecuted);
-    # }
     def test_it_can_continue_actions(self):
         times_executed = 0
 
@@ -6169,36 +4315,6 @@ class AgentTests:
     def _fixture_setup(self, setup_teardown_events):
         pass
 
-    # [Fact]
-    # public void ItHandlesInitialNullStateValuesCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", null }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "non-null value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", null }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "non-null value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.NotNull(agent.State["key"]);
-    # }
     def test_it_handles_initial_null_state_values_correctly(self):
         agent = Agent(
             state={
@@ -6227,36 +4343,6 @@ class AgentTests:
         assert agent.State["key"] is not None
         assert agent.State["key"] == "non-null value"
 
-    # [Fact]
-    # public void ItHandlesNullGoalsCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "non-null value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", null }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "non-null value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", null }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.Null(agent.State["key"]);
-    # }
     def test_it_handles_null_goals_correctly(self):
         agent = Agent(
             state={
@@ -6284,38 +4370,6 @@ class AgentTests:
         agent.step(StepMode.OneAction)
         assert agent.State["key"] is None
 
-    # [Fact]
-    # public void ItHandlesNonNullStateValuesCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "new value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "new value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     object? value = agent.State["key"];
-    #     Assert.NotNull(value);
-    #     if (value is not null) Assert.Equal("new value", (string)value);
-    # }
     def test_it_handles_non_null_state_values_correctly(self):
         agent = Agent(
             state={
@@ -6345,244 +4399,6 @@ class AgentTests:
         assert value is not None
         assert value == "new value"
 
-    # [Fact]
-    # public void ItExecutesOneActionInOneActionStepMode() {
-    #     var actionCount = 0;
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "value" }
-    
-    
-```python
-# // <copyright file="ActionNodeTests.py" company="Chris Muller">
-# // Copyright (c) Chris Muller. All rights reserved.
-# // </copyright>
-
-# global using Xunit;
-# global using MountainGoap;
-# These are handled by conftest.py
-import pytest
-from MountainGoap.Agent import Agent
-from MountainGoap.Action import Action
-from MountainGoap.BaseGoal import BaseGoal
-from MountainGoap.Goal import Goal
-from MountainGoap.ExecutionStatus import ExecutionStatus
-from MountainGoap.StepMode import StepMode
-from typing import Dict, Any, Optional
-
-class AgentTests:
-    @pytest.fixture(autouse=True) # Ensure events are cleared for each test
-    def _fixture_setup(self, setup_teardown_events):
-        pass
-
-    # [Fact]
-    # public void ItHandlesInitialNullStateValuesCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", null }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "non-null value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", null }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "non-null value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.NotNull(agent.State["key"]);
-    # }
-    def test_it_handles_initial_null_state_values_correctly(self):
-        agent = Agent(
-            state={
-                "key": None
-            },
-            goals=[
-                Goal(
-                    desired_state={
-                        "key": "non-null value"
-                    }
-                )
-            ],
-            actions=[
-                Action(
-                    preconditions={
-                        "key": None
-                    },
-                    postconditions={
-                        "key": "non-null value"
-                    },
-                    executor=lambda agent_inst, action_inst: ExecutionStatus.Succeeded
-                )
-            ]
-        )
-        agent.step(StepMode.OneAction)
-        assert agent.State["key"] is not None
-        assert agent.State["key"] == "non-null value"
-
-    # [Fact]
-    # public void ItHandlesNullGoalsCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "non-null value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", null }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "non-null value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", None }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.Null(agent.State["key"]);
-    # }
-    def test_it_handles_null_goals_correctly(self):
-        agent = Agent(
-            state={
-                "key": "non-null value"
-            },
-            goals=[
-                Goal(
-                    desired_state={
-                        "key": None
-                    }
-                )
-            ],
-            actions=[
-                Action(
-                    preconditions={
-                        "key": "non-null value"
-                    },
-                    postconditions={
-                        "key": None
-                    },
-                    executor=lambda agent_inst, action_inst: ExecutionStatus.Succeeded
-                )
-            ]
-        )
-        agent.step(StepMode.OneAction)
-        assert agent.State["key"] is None
-
-    # [Fact]
-    # public void ItHandlesNonNullStateValuesCorrectly() {
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "new value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "new value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     object? value = agent.State["key"];
-    #     Assert.NotNull(value);
-    #     if (value is not null) Assert.Equal("new value", (string)value);
-    # }
-    def test_it_handles_non_null_state_values_correctly(self):
-        agent = Agent(
-            state={
-                "key": "value"
-            },
-            goals=[
-                Goal(
-                    desired_state={
-                        "key": "new value"
-                    }
-                )
-            ],
-            actions=[
-                Action(
-                    preconditions={
-                        "key": "value"
-                    },
-                    postconditions={
-                        "key": "new value"
-                    },
-                    executor=lambda agent_inst, action_inst: ExecutionStatus.Succeeded
-                )
-            ]
-        )
-        agent.step(StepMode.OneAction)
-        value = agent.State["key"]
-        assert value is not None
-        assert value == "new value"
-
-    # [Fact]
-    # public void ItExecutesOneActionInOneActionStepMode() {
-    #     var actionCount = 0;
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "new value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "new value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     actionCount++;
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.Equal(1, actionCount);
-    # }
     def test_it_executes_one_action_in_one_action_step_mode(self):
         action_count = 0
 
@@ -6620,50 +4436,6 @@ class AgentTests:
         assert not agent.IsBusy
         assert not agent.CurrentActionSequences # Plan should be completed
 
-    # [Fact]
-    # public void ItExecutesAllActionsInAllActionsStepMode() {
-    #     var actionCount = 0;
-    #     var agent = new Agent(
-    #         state: new() {
-    #             { "key", "value" }
-    #         },
-    #         goals: new List<BaseGoal> {
-    #             new Goal(
-    #                 desiredState: new() {
-    #                     { "key", "new value" }
-    #                 }
-    #             )
-    #         },
-    #         actions: new List<Action> {
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "intermediate value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     actionCount++;
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             ),
-    #             new Action(
-    #                 preconditions: new() {
-    #                     { "key", "intermediate value" }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "key", "new value" }
-    #                 },
-    #                 executor: (Agent agent, Action action) => {
-    #                     actionCount++;
-    #                     return ExecutionStatus.Succeeded;
-    #                 }
-    #             )
-    #         }
-    #     );
-    #     agent.Step(StepMode.AllActions);
-    #     Assert.Equal(2, actionCount);
-    # }
     def test_it_executes_all_actions_in_all_actions_step_mode(self):
         action_count = 0
 
@@ -6741,49 +4513,6 @@ class ArithmeticPostconditionsTests:
     def _fixture_setup(self, setup_teardown_events):
         pass
 
-    # [Fact]
-    # public void MinimalExampleTest()
-    # {
-    #
-    #     List<BaseGoal> goals = new() {
-    #         new ComparativeGoal(
-    #             name: "Goal1",
-    #             desiredState: new() {
-    #                 { "i", new ComparisonValuePair {
-    #                     Value = 100,
-    #                     Operator = ComparisonOperator.GreaterThan
-    #                 } }
-    #             },
-    #             weight: 1f
-    #         ),
-    #     };
-    #
-    #     List<MountainGoap.Action> actions = new() {
-    #         new MountainGoap.Action(
-    #             name: "Action1",
-    #             executor: (Agent agent, MountainGoap.Action action) => {
-    #                 return ExecutionStatus.Succeeded;
-    #             },
-    #             arithmeticPostconditions: new Dictionary<string, object> {
-    #                 { "i", 10 }
-    #             },
-    #             cost: 0.5f
-    #         ),
-    #     };
-    #
-    #     Agent agent = new(
-    #         goals: goals,
-    #         actions: actions,
-    #         state: new() {
-    #             { "i", 0 }
-    #         }
-    #     );
-    #
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.Equal(10, agent.State["i"]);
-    #     agent.Step(StepMode.OneAction);
-    #     Assert.Equal(20, agent.State["i"]);
-    # }
     def test_minimal_example_test(self):
         goals = [
             ComparativeGoal(
@@ -6868,13 +4597,6 @@ class PermutationSelectorGeneratorTests:
     def _fixture_setup(self, setup_teardown_events):
         pass
 
-    # [Fact]
-    # public void ItSelectsFromACollection() {
-    #     var collection = new List<int> { 1, 2, 3 };
-    #     var selector = PermutationSelectorGenerators.SelectFromCollection(collection);
-    #     List<object> permutations = selector(new ConcurrentDictionary<string, object?>());
-    #     Assert.Equal(3, permutations.Count);
-    # }
     def test_it_selects_from_a_collection(self):
         collection = [1, 2, 3]
         selector = PermutationSelectorGenerators.select_from_collection(collection)
@@ -6882,13 +4604,6 @@ class PermutationSelectorGeneratorTests:
         assert len(permutations) == 3
         assert sorted(permutations) == [1, 2, 3]
 
-    # [Fact]
-    # public void ItSelectsFromACollectionInState() {
-    #     var collection = new List<int> { 1, 2, 3 };
-    #     var selector = PermutationSelectorGenerators.SelectFromCollectionInState<int>("collection");
-    #     List<object> permutations = selector(new ConcurrentDictionary<string, object?> { { "collection", collection } });
-    #     Assert.Equal(3, permutations.Count);
-    # }
     def test_it_selects_from_a_collection_in_state(self):
         collection = [1, 2, 3]
         selector = PermutationSelectorGenerators.select_from_collection_in_state("collection")
@@ -6896,12 +4611,6 @@ class PermutationSelectorGeneratorTests:
         assert len(permutations) == 3
         assert sorted(permutations) == [1, 2, 3]
 
-    # [Fact]
-    # public void ItSelectsFromAnIntegerRange() {
-    #     var selector = PermutationSelectorGenerators.SelectFromIntegerRange(1, 4);
-    #     List<object> permutations = selector(new ConcurrentDictionary<string, object?>());
-    #     Assert.Equal(3, permutations.Count);
-    # }
     def test_it_selects_from_an_integer_range(self):
         selector = PermutationSelectorGenerators.select_from_integer_range(1, 4)
         permutations = selector({}) # Empty state dict
@@ -6938,57 +4647,6 @@ class PermutationSelectorTests:
     def _fixture_setup(self, setup_teardown_events):
         pass
 
-    # [Fact]
-    # public void ItSelectsFromADynamicallyGeneratedCollectionInState() {
-    #     var collection = new List<int> { 1, 2, 3 };
-    #     var selector = PermutationSelectorGenerators.SelectFromCollectionInState<int>("collection");
-    #     var agent = new Agent(
-    #         name: "sample agent",
-    #         state: new() {
-    #             { "collection", collection },
-    #             { "goalAchieved", false }
-    #         },
-    #         goals: new() {
-    #             new Goal(
-    #                 name: "sample goal",
-    #                 desiredState: new Dictionary<string, object?> {
-    #                     { "goalAchieved", true }
-    #                 }
-    #             )
-    #         },
-    #         actions: new() {
-    #             new(
-    #                 name: "sample action",
-    #                 cost: 1f,
-    #                 preconditions: new() {
-    #                     { "goalAchieved", False }
-    #                 },
-    #                 postconditions: new() {
-    #                     { "goalAchieved", True }
-    #                 },
-    #                 executor: (agent, action) => { return ExecutionStatus.Succeeded; }
-    #             )
-    #         },
-    #         sensors: new() {
-    #             new(
-    #                 (agent) => {
-    #                     if (agent.State["collection"] is List<int> collection) {
-    #                         collection.Add(4);
-    #                     }
-    #                 },
-    #                 name: "sample sensor"
-    #             )
-    #         }
-    #     );
-    #     List<object> permutations = selector(agent.State);
-    #     Assert.Equal(3, permutations.Count);
-    #     agent.Step(StepMode.OneAction);
-    #     permutations = selector(agent.State);
-    #     Assert.Equal(4, permutations.Count);
-    #     agent.Step(StepMode.OneAction);
-    #     permutations = selector(agent.State);
-    #     Assert.Equal(5, permutations.Count);
-    # }
     def test_it_selects_from_a_dynamically_generated_collection_in_state(self):
         collection = [1, 2, 3]
         selector = PermutationSelectorGenerators.select_from_collection_in_state("collection")
@@ -7062,5 +4720,1461 @@ class PermutationSelectorTests:
         assert len(permutations) == 5
         assert agent.State["collection"] == [1, 2, 3, 4, 5]
         # goalAchieved remains true, no new action from planning.
+
+```
+
+---
+
+**Examples/ArithmeticHappinessIncrementer.py**
+
+```python
+# // <copyright file="ArithmeticHappinessIncrementer.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+# or current directory structure allows direct relative imports
+# For this example, assuming sys.path has been configured (e.g., via conftest.py or manual setup)
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.Goal import Goal
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class ArithmeticHappinessIncrementer:
+    """
+    Simple goal to maximize happiness using arithmetic postconditions.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        agent = Agent(
+            name="Happiness Agent",
+            state={
+                "happiness": 0,
+            },
+            goals=[
+                Goal(
+                    name="Maximize Happiness",
+                    desired_state={
+                        "happiness": 10
+                    })
+            ],
+            actions=[
+                Action(
+                    name="Seek Happiness",
+                    executor=ArithmeticHappinessIncrementer._seek_happiness_action,
+                    arithmetic_postconditions={
+                        "happiness": 1
+                    }
+                ),
+                Action(
+                    name="Seek Greater Happiness",
+                    executor=ArithmeticHappinessIncrementer._seek_greater_happiness_action,
+                    arithmetic_postconditions={
+                        "happiness": 2
+                    }
+                )
+            ]
+        )
+
+        # The loop condition in C#: `while (agent.State["happiness"] is int happiness && happiness != 10)`
+        # `is int happiness` performs a type check and casts. In Python, we just check the value.
+        while agent.State.get("happiness") != 10:
+            agent.step()
+            print(f"NEW HAPPINESS IS {agent.State.get('happiness')}")
+            # Add a small delay to make output readable if running fast
+            # import time
+            # time.sleep(0.1)
+
+    @staticmethod
+    def _seek_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking happiness.")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _seek_greater_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking even greater happiness.")
+        return ExecutionStatus.Succeeded
+
+```
+
+---
+
+**Examples/CarDemo.py**
+
+```python
+# // <copyright file="CarDemo.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.ComparativeGoal import ComparativeGoal
+from MountainGoap.ComparisonOperator import ComparisonOperator
+from MountainGoap.ComparisonValuePair import ComparisonValuePair
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoap.PermutationSelectorGenerators import PermutationSelectorGenerators
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class CarDemo:
+    """
+    Simple goal to travel via walking or driving.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        agent = Agent(
+            name="Driving Agent",
+            state={
+                "distanceTraveled": 0,
+                "inCar": False
+            },
+            goals=[
+                ComparativeGoal(
+                    name="Travel 50 miles",
+                    desired_state={
+                        "distanceTraveled": ComparisonValuePair(
+                            operator=ComparisonOperator.GreaterThanOrEquals,
+                            value=50
+                        )
+                    })
+            ],
+            actions=[
+                Action(
+                    name="Walk",
+                    cost=50.0,
+                    postconditions={
+                        "distanceTraveled": 50
+                    },
+                    executor=CarDemo._travel_executor
+                ),
+                Action(
+                    name="Drive",
+                    cost=5.0,
+                    preconditions={
+                        "inCar": True
+                    },
+                    postconditions={
+                        "distanceTraveled": 50
+                    },
+                    executor=CarDemo._travel_executor
+                ),
+                Action(
+                    name="Get in Car",
+                    cost=1.0,
+                    preconditions={
+                        "inCar": False
+                    },
+                    postconditions={
+                        "inCar": True
+                    },
+                    executor=CarDemo._get_in_car_executor
+                )
+            ]
+        )
+
+        # C# while loop condition: `while (agent.State["distanceTraveled"] is int distance && distance < 50)`
+        while agent.State.get("distanceTraveled") is not None and agent.State["distanceTraveled"] < 50:
+            agent.step()
+            # Optional: Add print statement to see progress
+            # print(f"Distance traveled: {agent.State.get('distanceTraveled')}, In car: {agent.State.get('inCar')}")
+            # import time
+            # time.sleep(0.1)
+
+    @staticmethod
+    def _travel_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        # print(f"Executing {action_instance.Name}")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _get_in_car_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        # print(f"Executing {action_instance.Name}")
+        return ExecutionStatus.Succeeded
+
+```
+
+---
+
+**Examples/ComparativeHappinessIncrementer.py**
+
+```python
+# // <copyright file="ComparativeHappinessIncrementer.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.ComparativeGoal import ComparativeGoal
+from MountainGoap.ComparisonOperator import ComparisonOperator
+from MountainGoap.ComparisonValuePair import ComparisonValuePair
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class ComparativeHappinessIncrementer:
+    """
+    Simple goal to maximize happiness using comparative goals.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        agent = Agent(
+            name="Happiness Agent",
+            state={
+                "happiness": 0,
+            },
+            goals=[
+                ComparativeGoal(
+                    name="Maximize Happiness",
+                    desired_state={
+                        "happiness": ComparisonValuePair(
+                            operator=ComparisonOperator.GreaterThanOrEquals,
+                            value=10
+                        )
+                    })
+            ],
+            actions=[
+                Action(
+                    name="Seek Happiness",
+                    executor=ComparativeHappinessIncrementer._seek_happiness_action,
+                    arithmetic_postconditions={
+                        "happiness": 1
+                    }
+                ),
+                Action(
+                    name="Seek Greater Happiness",
+                    executor=ComparativeHappinessIncrementer._seek_greater_happiness_action,
+                    arithmetic_postconditions={
+                        "happiness": 2
+                    }
+                )
+            ]
+        )
+
+        # C# while loop condition: `while (agent.State["happiness"] is int happiness && happiness < 10)`
+        while agent.State.get("happiness") is not None and agent.State["happiness"] < 10:
+            agent.step()
+            print(f"NEW HAPPINESS IS {agent.State.get('happiness')}")
+            # import time
+            # time.sleep(0.1)
+
+    @staticmethod
+    def _seek_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking happiness.")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _seek_greater_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking even greater happiness.")
+        return ExecutionStatus.Succeeded
+
+```
+
+---
+
+**Examples/ConsumerDemo.py**
+
+```python
+# // <copyright file="ConsumerDemo.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional, List
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.ComparativeGoal import ComparativeGoal
+from MountainGoap.ComparisonOperator import ComparisonOperator
+from MountainGoap.ComparisonValuePair import ComparisonValuePair
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoap.PermutationSelectorGenerators import PermutationSelectorGenerators
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class ConsumerDemo:
+    """
+    Goal to create enough food to eat by working and grocery shopping.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        locations = ["home", "work", "store"]
+        
+        agent = Agent(
+            name="Consumer Agent",
+            state={
+                "food": 0,
+                "energy": 100,
+                "money": 0,
+                "inCar": False,
+                "location": "home",
+                "justTraveled": False
+            },
+            goals=[
+                ComparativeGoal(
+                    name="Get at least 5 food",
+                    desired_state={
+                        "food": ComparisonValuePair(
+                            operator=ComparisonOperator.GreaterThanOrEquals,
+                            value=5
+                        )
+                    })
+            ],
+            actions=[
+                Action(
+                    name="Walk",
+                    cost=6.0,
+                    executor=ConsumerDemo._generic_executor,
+                    preconditions={
+                        "inCar": False
+                    },
+                    permutation_selectors={
+                        "location": PermutationSelectorGenerators.select_from_collection(locations)
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1
+                    },
+                    parameter_postconditions={
+                        "location": "location" # Parameter 'location' (from permutation selector) copied to state 'location'
+                    }
+                ),
+                Action(
+                    name="Drive",
+                    cost=1.0,
+                    preconditions={
+                        "inCar": True,
+                        "justTraveled": False
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)
+                    },
+                    executor=ConsumerDemo._generic_executor,
+                    permutation_selectors={
+                        "location": PermutationSelectorGenerators.select_from_collection(locations)
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1
+                    },
+                    parameter_postconditions={
+                        "location": "location"
+                    },
+                    postconditions={
+                        "justTraveled": True # Prevent repeated driving in one logical "turn" if the action implies a single move
+                    }
+                ),
+                Action(
+                    name="Get in car",
+                    cost=1.0,
+                    preconditions={
+                        "inCar": False,
+                        "justTraveled": False # Cannot get in car if just traveled implies it's part of same "turn"
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)
+                    },
+                    postconditions={
+                        "inCar": True
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1
+                    },
+                    executor=ConsumerDemo._generic_executor
+                ),
+                Action(
+                    name="Get out of car",
+                    cost=1.0,
+                    preconditions={
+                        "inCar": True
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonOperator.GreaterThan, value=0 # C# code is missing ComparisonValuePair() here.
+                                                                           # Assuming it should be `ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)`
+                    },
+                    postconditions={
+                        "inCar": False
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1
+                    },
+                    executor=ConsumerDemo._generic_executor
+                ),
+                Action(
+                    name="Work",
+                    cost=1.0,
+                    preconditions={
+                        "location": "work",
+                        "inCar": False
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1,
+                        "money": 1
+                    },
+                    postconditions={
+                        "justTraveled": False # Reset justTraveled after arriving and working
+                    },
+                    executor=ConsumerDemo._generic_executor
+                ),
+                Action(
+                    name="Shop",
+                    cost=1.0,
+                    preconditions={
+                        "location": "store",
+                        "inCar": False
+                    },
+                    comparative_preconditions={
+                        "energy": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0),
+                        "money": ComparisonValuePair(operator=ComparisonOperator.GreaterThan, value=0)
+                    },
+                    arithmetic_postconditions={
+                        "energy": -1,
+                        "money": -1, # Spend money to buy food
+                        "food": 1
+                    },
+                    postconditions={
+                        "justTraveled": False # Reset justTraveled after arriving and shopping
+                    },
+                    executor=ConsumerDemo._generic_executor
+                )
+            ]
+        )
+
+        # C# while loop condition: `while (agent.State["food"] is int food && food < 5)`
+        step_count = 0
+        max_steps = 100 # Safety break to prevent infinite loops in demos
+        while agent.State.get("food") is not None and agent.State["food"] < 5 and step_count < max_steps:
+            agent.step()
+            step_count += 1
+            print(f"--- Step {step_count} ---")
+            print(f"Food: {agent.State.get('food')}, Energy: {agent.State.get('energy')}, Money: {agent.State.get('money')}, Location: {agent.State.get('location')}, In Car: {agent.State.get('inCar')}, Just Traveled: {agent.State.get('justTraveled')}")
+            # import time
+            # time.sleep(0.1)
+
+        if step_count >= max_steps:
+            print(f"ConsumerDemo stopped after {max_steps} steps without reaching goal.")
+        else:
+            print(f"ConsumerDemo finished in {step_count} steps. Food: {agent.State.get('food')}")
+
+
+    @staticmethod
+    def _generic_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        # print(f"Executing {action_instance.Name}. Params: {action_instance._parameters}")
+        return ExecutionStatus.Succeeded
+
+```
+
+---
+
+**Examples/ExtremeHappinessIncrementer.py**
+
+```python
+# // <copyright file="ExtremeHappinessIncrementer.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.ExtremeGoal import ExtremeGoal
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class ExtremeHappinessIncrementer:
+    """
+    Simple goal to maximize happiness using extreme goals.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        agent = Agent(
+            name="Happiness Agent",
+            state={
+                "happiness": 0,
+                "health": False,
+            },
+            goals=[
+                ExtremeGoal(
+                    name="Maximize Happiness",
+                    desired_state={
+                        "happiness": True # True to maximize, False to minimize
+                    })
+            ],
+            actions=[
+                Action(
+                    name="Seek Happiness",
+                    executor=ExtremeHappinessIncrementer._seek_happiness_action,
+                    preconditions={
+                        "health": True # Requires health to seek happiness
+                    },
+                    arithmetic_postconditions={
+                        "happiness": 1
+                    }
+                ),
+                Action(
+                    name="Seek Greater Happiness",
+                    executor=ExtremeHappinessIncrementer._seek_greater_happiness_action,
+                    preconditions={
+                        "health": True # Requires health to seek greater happiness
+                    },
+                    arithmetic_postconditions={
+                        "happiness": 2
+                    }
+                ),
+                Action(
+                    name="Seek Health",
+                    executor=ExtremeHappinessIncrementer._seek_health,
+                    postconditions={
+                        "health": True # Sets health to true
+                    }
+                ),
+            ]
+        )
+
+        # C# while loop condition: `while (agent.State["happiness"] is int happiness && happiness != 10)`
+        while agent.State.get("happiness") != 10:
+            agent.step()
+            print(f"NEW HAPPINESS IS {agent.State.get('happiness')}")
+            # import time
+            # time.sleep(0.1)
+
+    @staticmethod
+    def _seek_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking happiness.")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _seek_greater_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking even greater happiness.")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _seek_health(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        print("Seeking health.")
+        return ExecutionStatus.Succeeded
+
+```
+
+---
+
+**Examples/HappinessIncrementer.py**
+
+```python
+# // <copyright file="HappinessIncrementer.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.Goal import Goal
+from MountainGoap.Sensor import Sensor
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+class HappinessIncrementer:
+    """
+    Simple goal to increment happiness using normal goals and a sensor.
+    """
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger() # Initialize logger to subscribe to events
+        
+        agent = Agent(
+            name="Happiness Agent",
+            state={
+                "happiness": 0,
+                "happinessRecentlyIncreased": False
+            },
+            goals=[
+                Goal(
+                    name="Maximize Happiness",
+                    desired_state={
+                        "happinessRecentlyIncreased": True
+                    })
+            ],
+            sensors=[
+                Sensor(HappinessIncrementer._ennui_sensor_handler, "Ennui Sensor")
+            ],
+            actions=[
+                Action(
+                    name="Seek Happiness",
+                    executor=HappinessIncrementer._seek_happiness_action,
+                    preconditions={
+                        "happinessRecentlyIncreased": False
+                    },
+                    postconditions={
+                        "happinessRecentlyIncreased": True
+                    }
+                )
+            ]
+        )
+
+        # C# while loop condition: `while (agent.State["happiness"] is int happiness && happiness != 10)`
+        while agent.State.get("happiness") != 10:
+            agent.step()
+            # The Console.WriteLine for happiness is in SeekHappinessAction executor itself
+            # import time
+            # time.sleep(0.1)
+
+    @staticmethod
+    def _seek_happiness_action(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        happiness: Optional[int] = agent_instance.State.get("happiness")
+        if happiness is not None and isinstance(happiness, int):
+            happiness += 1
+            agent_instance.State["happiness"] = happiness
+            print("Seeking happiness.")
+            print(f"NEW HAPPINESS IS {happiness}")
+        return ExecutionStatus.Succeeded
+
+    @staticmethod
+    def _ennui_sensor_handler(agent_instance: Agent) -> None:
+        agent_instance.State["happinessRecentlyIncreased"] = False
+
+```
+
+---
+
+**Examples/Program.py**
+
+```python
+# // <copyright file="Program.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import argparse # Standard Python library for command-line parsing
+
+# Import demo runners
+from .ArithmeticHappinessIncrementer import ArithmeticHappinessIncrementer
+from .CarDemo import CarDemo
+from .ComparativeHappinessIncrementer import ComparativeHappinessIncrementer
+from .ConsumerDemo import ConsumerDemo
+from .ExtremeHappinessIncrementer import ExtremeHappinessIncrementer
+from .HappinessIncrementer import HappinessIncrementer
+from .RpgExample.RpgExample import RpgExample
+
+class Program:
+    """
+    Runs MountainGoap Demos.
+    """
+
+    @staticmethod
+    def main(args: list[str]) -> int:
+        parser = argparse.ArgumentParser(description="Run MountainGoap Demos.")
+        subparsers = parser.add_subparsers(dest="command", help="Available demos")
+
+        # Command: happiness
+        happiness_parser = subparsers.add_parser("happiness", help="Run the happiness incrementer demo.")
+        happiness_parser.set_defaults(func=Program._run_happiness_incrementer)
+
+        # Command: rpg
+        rpg_parser = subparsers.add_parser("rpg", help="Run the RPG enemy demo.")
+        rpg_parser.set_defaults(func=Program._run_rpg_enemy_demo)
+
+        # Command: arithmeticHappiness
+        arithmetic_happiness_parser = subparsers.add_parser("arithmeticHappiness", help="Run the arithmetic happiness incrementer demo.")
+        arithmetic_happiness_parser.set_defaults(func=Program._run_arithmetic_happiness_incrementer)
+
+        # Command: extremeHappiness
+        extreme_happiness_parser = subparsers.add_parser("extremeHappiness", help="Run the extreme happiness incrementer demo.")
+        extreme_happiness_parser.set_defaults(func=Program._run_extreme_happiness_incrementer)
+
+        # Command: comparativeHappiness
+        comparative_happiness_parser = subparsers.add_parser("comparativeHappiness", help="Run the comparative happiness incrementer demo.")
+        comparative_happiness_parser.set_defaults(func=Program._run_comparative_happiness_incrementer)
+
+        # Command: car
+        car_parser = subparsers.add_parser("car", help="Run the car demo.")
+        car_parser.set_defaults(func=Program._run_car_demo)
+
+        # Command: consumer
+        consumer_parser = subparsers.add_parser("consumer", help="Run the consumer demo.")
+        consumer_parser.set_defaults(func=Program._run_consumer_demo)
+
+        if not args:
+            parser.print_help()
+            return 0
+
+        parsed_args = parser.parse_args(args)
+
+        if hasattr(parsed_args, 'func'):
+            parsed_args.func()
+            return 0
+        else:
+            parser.print_help()
+            return 1 # Indicate an error or no command selected
+
+
+    @staticmethod
+    def _run_happiness_incrementer() -> None:
+        HappinessIncrementer.run()
+
+    @staticmethod
+    def _run_rpg_enemy_demo() -> None:
+        RpgExample.run()
+
+    @staticmethod
+    def _run_arithmetic_happiness_incrementer() -> None:
+        ArithmeticHappinessIncrementer.run()
+
+    @staticmethod
+    def _run_extreme_happiness_incrementer() -> None:
+        ExtremeHappinessIncrementer.run()
+
+    @staticmethod
+    def _run_comparative_happiness_incrementer() -> None:
+        ComparativeHappinessIncrementer.run()
+
+    @staticmethod
+    def _run_car_demo() -> None:
+        CarDemo.run()
+
+    @staticmethod
+    def _run_consumer_demo() -> None:
+        ConsumerDemo.run()
+
+# Standard Python entry point
+if __name__ == "__main__":
+    exit_code = Program.main(sys.argv[1:])
+    sys.exit(exit_code)
+
+```
+
+---
+
+**Examples/RpgExample/RpgUtils.py**
+
+```python
+# // <copyright file="RpgUtils.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import math
+from typing import List, Any, Optional, Dict, TYPE_CHECKING
+
+# Assuming MountainGoap is available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+
+if TYPE_CHECKING:
+    from MountainGoap.Internals.ActionNode import ActionNode # For type hints in cost callbacks
+
+# A type alias for the state dictionary
+StateDictionary = Dict[str, Optional[Any]]
+
+# C# `System.Numerics.Vector2` equivalent for this example
+class Vector2:
+    def __init__(self, x: float, y: float):
+        self.X = x
+        self.Y = y
+
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, Vector2):
+            return NotImplemented
+        return self.X == other.X and self.Y == other.Y
+
+    def __hash__(self) -> int:
+        return hash((self.X, self.Y))
+    
+    def __repr__(self) -> str:
+        return f"Vector2({self.X}, {self.Y})"
+
+class RpgUtils:
+    """
+    Utility classes for the RPG example.
+    """
+
+    @staticmethod
+    def in_distance(pos1: Vector2, pos2: Vector2, max_distance: float) -> bool:
+        """
+        Checks if two positions are within a certain distance of one another.
+        """
+        distance = RpgUtils._distance(pos1, pos2)
+        return distance <= max_distance
+
+    @staticmethod
+    def get_enemy_in_range(source: Agent, agents: List[Agent], distance: float) -> Optional[Agent]:
+        """
+        Gets an enemy within a given range of a source agent.
+        """
+        for agent in agents:
+            if agent == source:
+                continue
+            
+            # Type checking and access values
+            source_pos = source.State.get("position")
+            agent_pos = agent.State.get("position")
+            source_faction = source.State.get("faction")
+            agent_faction = agent.State.get("faction")
+
+            if isinstance(source_pos, Vector2) and \
+               isinstance(agent_pos, Vector2) and \
+               isinstance(source_faction, str) and \
+               isinstance(agent_faction, str) and \
+               RpgUtils.in_distance(source_pos, agent_pos, distance) and \
+               source_faction != agent_faction:
+                return agent
+        return None
+
+    @staticmethod
+    def move_towards_other_position(pos1: Vector2, pos2: Vector2) -> Vector2:
+        """
+        Moves a position towards another position one space and returns the result.
+        This is a simple Manhattan-like move.
+        """
+        new_pos = Vector2(pos1.X, pos1.Y) # Create a copy to modify
+        
+        x_diff = pos2.X - new_pos.X
+        y_diff = pos2.Y - new_pos.Y
+
+        x_sign = 0
+        if x_diff > 0: x_sign = 1
+        elif x_diff < 0: x_sign = -1
+
+        y_sign = 0
+        if y_diff > 0: y_sign = 1
+        elif y_diff < 0: y_sign = -1
+        
+        # C# Math.Sign behavior
+        # `if (xSign != 0) pos1.X += xSign; else pos1.Y += ySign;`
+        # This means it prioritizes X movement, and only moves Y if X is aligned.
+        if x_sign != 0:
+            new_pos.X += x_sign
+        elif y_sign != 0: # Only if x_sign is 0, move in Y direction
+            new_pos.Y += y_sign
+        
+        return new_pos
+
+    @staticmethod
+    def enemy_permutations(state: StateDictionary) -> List[Any]:
+        """
+        Permutation selector to grab all enemies.
+        """
+        enemies: List[Any] = []
+        
+        agents_list = state.get("agents")
+        agent_faction = state.get("faction")
+
+        if not isinstance(agents_list, list) or \
+           not all(isinstance(a, Agent) for a in agents_list) or \
+           not isinstance(agent_faction, str):
+            return enemies
+        
+        # Filter agents that are not in the same faction as the current agent
+        for agent in agents_list:
+            if isinstance(agent.State.get("faction"), str) and agent.State["faction"] != agent_faction:
+                enemies.append(agent)
+        return enemies
+
+    @staticmethod
+    def food_permutations(state: StateDictionary) -> List[Any]:
+        """
+        Permutation selector to grab all food positions.
+        """
+        food_positions: List[Any] = []
+        
+        source_positions = state.get("foodPositions")
+        
+        if not isinstance(source_positions, list) or \
+           not all(isinstance(p, Vector2) for p in source_positions):
+            return food_positions
+        
+        # Copy elements from sourcePositions to foodPositions (list copy)
+        food_positions.extend(source_positions)
+        return food_positions
+
+    @staticmethod
+    def starting_position_permutations(state: StateDictionary) -> List[Any]:
+        """
+        Gets a list of all possible starting positions for a move action.
+        """
+        starting_positions: List[Any] = []
+        position = state.get("position")
+        
+        if not isinstance(position, Vector2):
+            return starting_positions
+        
+        starting_positions.append(position)
+        return starting_positions
+
+    @staticmethod
+    def go_to_enemy_cost(action: Action, state: StateDictionary) -> float:
+        """
+        Gets the cost of moving to an enemy.
+        """
+        starting_position = action.get_parameter("startingPosition")
+        target_agent = action.get_parameter("target")
+
+        if not isinstance(starting_position, Vector2) or \
+           not isinstance(target_agent, Agent):
+            return float('inf') # float.MaxValue in C#
+        
+        target_position = target_agent.State.get("position")
+
+        if not isinstance(target_position, Vector2):
+            return float('inf')
+        
+        return RpgUtils._distance(starting_position, target_position)
+
+    @staticmethod
+    def go_to_food_cost(action: Action, state: StateDictionary) -> float:
+        """
+        Gets the cost of moving to food.
+        """
+        starting_position = action.get_parameter("startingPosition")
+        target_position = action.get_parameter("target")
+
+        if not isinstance(starting_position, Vector2) or \
+           not isinstance(target_position, Vector2):
+            return float('inf') # float.MaxValue in C#
+        
+        return RpgUtils._distance(starting_position, target_position)
+
+    @staticmethod
+    def _distance(pos1: Vector2, pos2: Vector2) -> float:
+        """
+        Calculates the Euclidean distance between two Vector2 positions.
+        """
+        return math.sqrt(math.pow(abs(pos2.X - pos1.X), 2) + math.pow(abs(pos2.Y - pos1.Y), 2))
+
+```
+
+---
+
+**Examples/RpgExample/RpgCharacterFactory.py**
+
+```python
+# // <copyright file="RpgCharacterFactory.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import sys
+import os
+from typing import List, Dict, Any, Optional
+
+# Assuming MountainGoap and RpgUtils are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.Goal import Goal
+from MountainGoap.Sensor import Sensor
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoap.BaseGoal import BaseGoal
+from MountainGoap.ComparisonOperator import ComparisonOperator
+from MountainGoap.ComparisonValuePair import ComparisonValuePair
+
+from .RpgUtils import RpgUtils, Vector2
+
+# A type alias for the state dictionary
+StateDictionary = Dict[str, Optional[Any]]
+
+class RpgCharacterFactory:
+    """
+    Class for generating an RPG character.
+    """
+
+    @staticmethod
+    def create(agents: List[Agent], name: str = "Player") -> Agent:
+        """
+        Returns an RPG character agent.
+        """
+        remove_enemies_goal = Goal(
+            name="Remove Enemies",
+            weight=1.0,
+            desired_state={
+                "canSeeEnemies": False
+            }
+        )
+
+        see_enemies_sensor = Sensor(RpgCharacterFactory._see_enemies_sensor_handler, "Enemy Sight Sensor")
+        enemy_proximity_sensor = Sensor(RpgCharacterFactory._enemy_proximity_sensor_handler, "Enemy Proximity Sensor")
+
+        go_to_enemy_action = Action(
+            name="Go To Enemy",
+            executor=RpgCharacterFactory._go_to_enemy_executor,
+            preconditions={
+                "canSeeEnemies": True,
+                "nearEnemy": False
+            },
+            postconditions={
+                "nearEnemy": True
+            },
+            permutation_selectors={
+                "target": RpgUtils.enemy_permutations,
+                "startingPosition": RpgUtils.starting_position_permutations
+            },
+            cost_callback=RpgUtils.go_to_enemy_cost
+        )
+
+        kill_nearby_enemy_action = Action(
+            name="Kill Nearby Enemy",
+            executor=RpgCharacterFactory._kill_nearby_enemy_executor,
+            preconditions={
+                "nearEnemy": True
+            },
+            postconditions={
+               "canSeeEnemies": False, # After killing, you might not see enemies immediately
+               "nearEnemy": False      # And certainly not near this one
+            }
+        )
+
+        agent = Agent(
+            name=name,
+            state={
+                "canSeeEnemies": False,
+                "nearEnemy": False,
+                "hp": 10,
+                "position": Vector2(10, 10), # Initial position
+                "faction": "enemy" if "Monster" in name else "player", # Set default faction, will be overridden for player
+                "agents": agents # Reference to the list of all agents in the world
+            },
+            goals=[
+                remove_enemies_goal
+            ],
+            sensors=[
+                see_enemies_sensor,
+                enemy_proximity_sensor
+            ],
+            actions=[
+                go_to_enemy_action,
+                kill_nearby_enemy_action
+            ]
+        )
+        return agent
+
+    @staticmethod
+    def _see_enemies_sensor_handler(agent_instance: Agent) -> None:
+        agents_in_state = agent_instance.State.get("agents")
+        if isinstance(agents_in_state, list):
+            enemy_in_range = RpgUtils.get_enemy_in_range(agent_instance, agents_in_state, 5.0)
+            agent_instance.State["canSeeEnemies"] = (enemy_in_range is not None)
+
+    @staticmethod
+    def _enemy_proximity_sensor_handler(agent_instance: Agent) -> None:
+        agents_in_state = agent_instance.State.get("agents")
+        if isinstance(agents_in_state, list):
+            enemy_in_range = RpgUtils.get_enemy_in_range(agent_instance, agents_in_state, 1.0)
+            agent_instance.State["nearEnemy"] = (enemy_in_range is not None)
+
+    @staticmethod
+    def _kill_nearby_enemy_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        agents_in_state = agent_instance.State.get("agents")
+        if isinstance(agents_in_state, list):
+            target_enemy = RpgUtils.get_enemy_in_range(agent_instance, agents_in_state, 1.0)
+            if target_enemy is not None:
+                current_hp = target_enemy.State.get("hp")
+                if isinstance(current_hp, int):
+                    current_hp -= 1
+                    target_enemy.State["hp"] = current_hp
+                    print(f"{agent_instance.Name} attacked {target_enemy.Name}. {target_enemy.Name} HP: {current_hp}")
+                    if current_hp <= 0:
+                        print(f"{target_enemy.Name} defeated!")
+                        return ExecutionStatus.Succeeded # Action succeeds if enemy is defeated
+        return ExecutionStatus.Failed # Action fails if no enemy or enemy not defeated
+
+    @staticmethod
+    def _go_to_enemy_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        target_agent = action_instance.get_parameter("target")
+        agent_position = agent_instance.State.get("position")
+
+        if not isinstance(target_agent, Agent) or \
+           not isinstance(agent_position, Vector2):
+            return ExecutionStatus.Failed
+        
+        target_position = target_agent.State.get("position")
+        if not isinstance(target_position, Vector2):
+            return ExecutionStatus.Failed
+        
+        # Move one step towards the target
+        new_position = RpgUtils.move_towards_other_position(agent_position, target_position)
+        agent_instance.State["position"] = new_position
+        
+        # Check if now within attacking distance (1 unit)
+        if RpgUtils.in_distance(new_position, target_position, 1.0):
+            return ExecutionStatus.Succeeded # Reached the proximity to engage
+        else:
+            return ExecutionStatus.Executing # Still moving, action continues next step
+
+```
+
+---
+
+**Examples/RpgExample/RpgMonsterFactory.py**
+
+```python
+# // <copyright file="RpgMonsterFactory.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import random
+import sys
+import os
+from typing import List, Dict, Any, Optional
+
+# Assuming MountainGoap and RpgUtils are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.Action import Action
+from MountainGoap.Goal import Goal
+from MountainGoap.Sensor import Sensor
+from MountainGoap.ExecutionStatus import ExecutionStatus
+from MountainGoap.BaseGoal import BaseGoal
+from MountainGoap.ComparisonOperator import ComparisonOperator
+from MountainGoap.ComparisonValuePair import ComparisonValuePair
+
+from .RpgUtils import RpgUtils, Vector2
+from .RpgCharacterFactory import RpgCharacterFactory
+from .RpgExample import RpgExample # To access MaxX, MaxY
+
+
+# A type alias for the state dictionary
+StateDictionary = Dict[str, Optional[Any]]
+
+class RpgMonsterFactory:
+    """
+    Class for generating an RPG monster.
+    """
+
+    _rng = random.Random() # Static Random instance
+    _counter = 1 # Static counter for naming monsters
+
+    @staticmethod
+    def create(agents: List[Agent], food_positions: List[Vector2]) -> Agent:
+        """
+        Returns an RPG monster agent.
+        """
+        monster_name = f"Monster {RpgMonsterFactory._counter}"
+        RpgMonsterFactory._counter += 1
+        
+        # Monster is an RPG character, so create using RpgCharacterFactory and then customize
+        agent = RpgCharacterFactory.create(agents, monster_name)
+        agent.State["faction"] = "enemy" # Ensure monster has enemy faction
+
+        eat_food_goal = Goal(
+            name="Eat Food",
+            weight=0.1, # Lower weight than 'Remove Enemies' (which is 1.0)
+            desired_state={
+                "eatingFood": True
+            }
+        )
+
+        see_food_sensor = Sensor(RpgMonsterFactory._see_food_sensor_handler, "Food Sight Sensor")
+        food_proximity_sensor = Sensor(RpgMonsterFactory._food_proximity_sensor_handler, "Food Proximity Sensor")
+
+        look_for_food_action = Action(
+            name="Look For Food",
+            executor=RpgMonsterFactory._look_for_food_executor,
+            preconditions={
+                "canSeeFood": False,
+                "canSeeEnemies": False # Don't look for food if enemies are visible
+            },
+            postconditions={
+                "canSeeFood": True # This action attempts to see food by moving around
+            }
+        )
+
+        go_to_food_action = Action(
+            name="Go To Food",
+            executor=RpgMonsterFactory._go_to_food_executor,
+            preconditions={
+                "canSeeFood": True,
+                "canSeeEnemies": False # Don't go to food if enemies are visible
+            },
+            postconditions={
+                "nearFood": True
+            },
+            permutation_selectors={
+                "target": RpgUtils.food_permutations,
+                "startingPosition": RpgUtils.starting_position_permutations
+            },
+            cost_callback=RpgUtils.go_to_food_cost
+        )
+
+        eat_action = Action(
+            name="Eat",
+            executor=RpgMonsterFactory._eat_executor,
+            preconditions={
+                "nearFood": True,
+                "canSeeEnemies": False # Don't eat if enemies are visible
+            },
+            postconditions={
+                "eatingFood": True # This state means the food is consumed
+            }
+        )
+        
+        # Set initial monster-specific state
+        agent.State["canSeeFood"] = False
+        agent.State["nearFood"] = False
+        agent.State["eatingFood"] = False
+        agent.State["foodPositions"] = food_positions # Reference to global food positions
+        agent.State["hp"] = 2 # Monsters have less HP than player
+
+        # Add monster-specific goals, sensors, actions
+        agent.Goals.append(eat_food_goal)
+        agent.Sensors.append(see_food_sensor)
+        agent.Sensors.append(food_proximity_sensor)
+        agent.Actions.append(go_to_food_action)
+        agent.Actions.append(look_for_food_action)
+        agent.Actions.append(eat_action)
+        
+        return agent
+
+    @staticmethod
+    def _get_food_in_range(source: Vector2, food_positions: List[Vector2], range_val: float) -> Optional[Vector2]:
+        """
+        Gets the first food position within a given range of a source position.
+        """
+        # C# FirstOrDefault with a default value.
+        # In Python, we can loop or use next with a generator expression.
+        for position in food_positions:
+            if RpgUtils.in_distance(source, position, range_val):
+                return position
+        return None # No food found in range
+
+    @staticmethod
+    def _see_food_sensor_handler(agent_instance: Agent) -> None:
+        agent_position = agent_instance.State.get("position")
+        food_positions_in_state = agent_instance.State.get("foodPositions")
+
+        if isinstance(agent_position, Vector2) and isinstance(food_positions_in_state, list):
+            food_in_range = RpgMonsterFactory._get_food_in_range(agent_position, food_positions_in_state, 5.0)
+            if food_in_range is not None:
+                agent_instance.State["canSeeFood"] = True
+            else:
+                agent_instance.State["canSeeFood"] = False
+                agent_instance.State["eatingFood"] = False # Cannot be eating if no food is seen
+
+    @staticmethod
+    def _food_proximity_sensor_handler(agent_instance: Agent) -> None:
+        agent_position = agent_instance.State.get("position")
+        food_positions_in_state = agent_instance.State.get("foodPositions")
+
+        if isinstance(agent_position, Vector2) and isinstance(food_positions_in_state, list):
+            food_in_range = RpgMonsterFactory._get_food_in_range(agent_position, food_positions_in_state, 1.0)
+            if food_in_range is not None:
+                agent_instance.State["nearFood"] = True
+            else:
+                agent_instance.State["nearFood"] = False
+                agent_instance.State["eatingFood"] = False # Cannot be eating if not near food
+
+    @staticmethod
+    def _look_for_food_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        agent_position = agent_instance.State.get("position")
+        if isinstance(agent_position, Vector2):
+            new_x = agent_position.X + RpgMonsterFactory._rng.randint(-1, 1) # randint includes both ends
+            new_y = agent_position.Y + RpgMonsterFactory._rng.randint(-1, 1)
+
+            # Clamp position within world bounds
+            from .RpgExample import RpgExample # Local import to get MaxX, MaxY
+            new_x = max(0, min(new_x, RpgExample.MaxX - 1))
+            new_y = max(0, min(new_y, RpgExample.MaxY - 1))
+
+            agent_instance.State["position"] = Vector2(new_x, new_y) # Update position
+
+        # Check if food is now seen *after* moving
+        # The sensor would run *after* this executor in the agent.step cycle,
+        # but this check needs to be against the *current* state of `canSeeFood` before executor.
+        # This executor is designed to succeed if food becomes true *after* its application.
+        # However, the current code checks it *before* sensor updates the state.
+        # The C# original also checks `agent.State["canSeeFood"]` after modifying `position` but before agent.Step finishes.
+        # The crucial part is that `agent.State["canSeeFood"]` would be updated by the sensor *after* this action executes.
+        # So, this action's success is determined by whether it *enabled* the sensor to see food.
+        # If agent.State["canSeeFood"] is true from a prior run of the sensor, it means it's seen.
+        # The `is bool canSeeFood && canSeeFood` checks `canSeeFood` as it *currently* is.
+        # This implies it returns Succeeded if food was seen *before* the action or if the action doesn't change it.
+        # A more direct interpretation of "look for food" succeeding when food is *now visible* might require
+        # checking the condition immediately after its own effects are applied but before sensors run again.
+        # For strict verbatim, use the existing state value:
+        can_see_food = agent_instance.State.get("canSeeFood")
+        if isinstance(can_see_food, bool) and can_see_food:
+            return ExecutionStatus.Succeeded
+        return ExecutionStatus.Failed # Continue searching
+
+    @staticmethod
+    def _go_to_food_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        food_position = action_instance.get_parameter("target")
+        agent_position = agent_instance.State.get("position")
+
+        if not isinstance(food_position, Vector2) or \
+           not isinstance(agent_position, Vector2):
+            return ExecutionStatus.Failed
+        
+        new_position = RpgUtils.move_towards_other_position(agent_position, food_position)
+        agent_instance.State["position"] = new_position
+
+        if RpgUtils.in_distance(new_position, food_position, 1.0):
+            return ExecutionStatus.Succeeded # Reached the food
+        else:
+            return ExecutionStatus.Executing # Still moving towards food
+
+    @staticmethod
+    def _eat_executor(agent_instance: Agent, action_instance: Action) -> ExecutionStatus:
+        food_positions_in_state = agent_instance.State.get("foodPositions")
+        agent_position = agent_instance.State.get("position")
+
+        if isinstance(food_positions_in_state, list) and isinstance(agent_position, Vector2):
+            food_to_eat = RpgMonsterFactory._get_food_in_range(agent_position, food_positions_in_state, 1.0)
+            if food_to_eat is not None:
+                print(f"{agent_instance.Name} ate food at {food_to_eat}")
+                # Remove the food from the global list
+                food_positions_in_state.remove(food_to_eat)
+                return ExecutionStatus.Succeeded
+        return ExecutionStatus.Failed
+
+```
+
+---
+
+**Examples/RpgExample/RpgExample.py**
+
+```python
+# // <copyright file="RpgExample.py" company="Chris Muller">
+# // Copyright (c) Chris Muller. All rights reserved.
+# // </copyright>
+
+import random
+import time
+import os
+from typing import List, Dict, Any, Optional
+
+# Assuming MountainGoap and MountainGoapLogging are available in PYTHONPATH
+from MountainGoap.Agent import Agent
+from MountainGoap.StepMode import StepMode
+from MountainGoapLogging.DefaultLogger import DefaultLogger
+
+from .RpgCharacterFactory import RpgCharacterFactory
+from .RpgMonsterFactory import RpgMonsterFactory
+from .RpgUtils import Vector2
+
+# A helper function to clear the console (platform dependent)
+def clear_console():
+    os.system('cls' if os.name == 'nt' else 'clear')
+
+class RpgExample:
+    """
+    RPG example demo.
+    """
+
+    MaxX: int = 20
+
+    MaxY: int = 20
+
+    @staticmethod
+    def run() -> None:
+        _ = DefaultLogger(log_to_console=False, logging_file="rpg-example.log")
+        
+        _random = random.Random() # Instance of Random
+        agents: List[Agent] = []
+        food_positions: List[Vector2] = []
+
+        player = RpgCharacterFactory.create(agents)
+        player.State["faction"] = "player" # Set player faction
+        agents.append(player)
+
+        # Create food positions
+        for _ in range(20):
+            food_positions.append(Vector2(_random.randint(0, RpgExample.MaxX - 1), _random.randint(0, RpgExample.MaxY - 1)))
+        
+        # Create monsters
+        for _ in range(10):
+            monster = RpgMonsterFactory.create(agents, food_positions)
+            monster.State["position"] = Vector2(_random.randint(0, RpgExample.MaxX - 1), _random.randint(0, RpgExample.MaxY - 1))
+            agents.append(monster)
+        
+        # Game loop
+        for i in range(600): # 600 steps, each 200ms -> 120 seconds = 2 minutes
+            print(f"--- Turn {i+1} ---")
+            for agent in agents:
+                agent.step(mode=StepMode.OneAction) # Each agent executes one action
+            
+            RpgExample._process_deaths(agents)
+            RpgExample._print_grid(agents, food_positions)
+            time.sleep(0.2) # 200ms delay
+
+            # Check if player is still alive
+            if player not in agents:
+                print("Player defeated! Game Over.")
+                break
+            # Check if all monsters are defeated (goal met for player)
+            monsters_alive = [a for a in agents if a.State.get("faction") == "enemy"]
+            if not monsters_alive:
+                print("All monsters defeated! You win!")
+                break
+            
+        print("Game finished.")
+
+    @staticmethod
+    def _print_grid(agents: List[Agent], food_positions: List[Vector2]) -> None:
+        clear_console() # Clear screen before printing new frame
+        
+        grid: List[List[str]] = [[" " for _ in range(RpgExample.MaxY)] for _ in range(RpgExample.MaxX)]
+
+        for pos in food_positions:
+            if 0 <= pos.X < RpgExample.MaxX and 0 <= pos.Y < RpgExample.MaxY:
+                grid[int(pos.X)][int(pos.Y)] = "f"
+
+        for agent in agents:
+            agent_pos = agent.State.get("position")
+            agent_faction = agent.State.get("faction")
+            
+            if isinstance(agent_pos, Vector2) and isinstance(agent_faction, str):
+                if 0 <= agent_pos.X < RpgExample.MaxX and 0 <= agent_pos.Y < RpgExample.MaxY:
+                    if agent_faction == "player":
+                        grid[int(agent_pos.X)][int(agent_pos.Y)] = "@"
+                    else: # Monster
+                        grid[int(agent_pos.X)][int(agent_pos.Y)] = "g"
+        
+        for row in grid:
+            print("".join(row))
+
+    @staticmethod
+    def _process_deaths(agents: List[Agent]) -> None:
+        cull_list: List[Agent] = []
+        for agent in agents:
+            hp = agent.State.get("hp")
+            if isinstance(hp, int) and hp <= 0:
+                cull_list.append(agent)
+        
+        for agent_to_remove in cull_list:
+            agents.remove(agent_to_remove)
+            print(f"Agent {agent_to_remove.Name} has died.")
 
 ```

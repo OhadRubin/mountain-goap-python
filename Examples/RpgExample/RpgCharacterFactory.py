@@ -16,7 +16,7 @@ from MountainGoap.BaseGoal import BaseGoal
 from MountainGoap.ComparisonOperator import ComparisonOperator
 from MountainGoap.ComparisonValuePair import ComparisonValuePair
 
-from .RpgUtils import RpgUtils, Vector2
+from Examples.RpgExample.RpgUtils import RpgUtils, Vector2
 
 # A type alias for the state dictionary
 StateDictionary = Dict[str, Optional[Any]]
@@ -76,7 +76,7 @@ class RpgCharacterFactory:
             state={
                 "canSeeEnemies": False,
                 "nearEnemy": False,
-                "hp": 10,
+                "hp": 80,
                 "position": Vector2(10, 10), # Initial position
                 "faction": "enemy" if "Monster" in name else "player", # Set default faction, will be overridden for player
                 "agents": agents # Reference to the list of all agents in the world

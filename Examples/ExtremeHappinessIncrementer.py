@@ -88,3 +88,7 @@ class ExtremeHappinessIncrementer:
         print("Seeking health.")
         return ExecutionStatus.Succeeded
 
+
+if __name__ == "__main__":
+    ExtremeHappinessIncrementer.run()
+

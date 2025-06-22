@@ -74,3 +74,6 @@ class HappinessIncrementer:
     def _ennui_sensor_handler(agent_instance: Agent) -> None:
         agent_instance.State["happinessRecentlyIncreased"] = False
 
+
+if __name__ == "__main__":
+    HappinessIncrementer.run()

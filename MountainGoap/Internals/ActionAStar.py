@@ -47,6 +47,9 @@ class ActionAStar:
         frontier = FastPriorityQueue[ActionNode](100000) # Max nodes for queue
         frontier.enqueue(start, 0.0)
 
+        # Use a node cache to avoid creating duplicate equivalent nodes
+        node_cache = {start: start}  # Maps node hash -> actual node object
+
         self.CameFrom[start] = start # A* uses start to point to itself to signify the beginning
         self.CostSoFar[start] = 0.0
         self.StepsSoFar[start] = 0
@@ -63,6 +66,12 @@ class ActionAStar:
                 break
             
             for next_node in graph.neighbors(current): # graph.neighbors generates nodes where the action's effects are *already applied*
+                # Check if we already have an equivalent node in our cache
+                if next_node in node_cache:
+                    next_node = node_cache[next_node]  # Use the cached version
+                else:
+                    node_cache[next_node] = next_node  # Cache this new node
+                
                 # The cost of 'next_node' is the cost of its action given the state *before* that action (which is `current.State`)
                 action_cost = next_node.cost(current.State) # Cost of the action in `next_node` when taken from `current.State`
                 new_cost = self.CostSoFar[current] + action_cost
@@ -81,7 +90,7 @@ class ActionAStar:
                     # So, `Heuristic(next, goal, current)` means heuristic from `next.State` towards goal, influenced by `current.State` as the immediate prior state.
                     priority = new_cost + self._heuristic(next_node, goal, current)
                     
-                    # If next_node is already in frontier but with higher priority, UpdatePriority is called.
+                    # Check if this node is already in the frontier
                     if frontier.contains(next_node):
                         frontier.update_priority(next_node, priority)
                     else:

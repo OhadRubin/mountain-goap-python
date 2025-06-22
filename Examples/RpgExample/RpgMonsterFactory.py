@@ -5,7 +5,7 @@
 import random
 import sys
 import os
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, TYPE_CHECKING
 
 # Assuming MountainGoap and RpgUtils are available in PYTHONPATH
 from MountainGoap.Agent import Agent
@@ -17,9 +17,11 @@ from MountainGoap.BaseGoal import BaseGoal
 from MountainGoap.ComparisonOperator import ComparisonOperator
 from MountainGoap.ComparisonValuePair import ComparisonValuePair
 
-from .RpgUtils import RpgUtils, Vector2
-from .RpgCharacterFactory import RpgCharacterFactory
-from .RpgExample import RpgExample # To access MaxX, MaxY
+from Examples.RpgExample.RpgUtils import RpgUtils, Vector2
+from Examples.RpgExample.RpgCharacterFactory import RpgCharacterFactory
+
+if TYPE_CHECKING:
+    from Examples.RpgExample.RpgExample import RpgExample
 
 
 # A type alias for the state dictionary
@@ -160,7 +162,7 @@ class RpgMonsterFactory:
             new_y = agent_position.Y + RpgMonsterFactory._rng.randint(-1, 1)
 
             # Clamp position within world bounds
-            from .RpgExample import RpgExample # Local import to get MaxX, MaxY
+            from Examples.RpgExample.RpgExample import RpgExample # Local import to get MaxX, MaxY
             new_x = max(0, min(new_x, RpgExample.MaxX - 1))
             new_y = max(0, min(new_y, RpgExample.MaxY - 1))
 

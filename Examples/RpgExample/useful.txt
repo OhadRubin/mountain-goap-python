@@ -1,0 +1,5 @@
+ 
+ (cd /Users/ohadr/goap/mg_port/mountain-goap && dotnet run --project Examples/Examples.csproj rpg)
+
+
+(cd /Users/ohadr/goap/mountain-goap-python && python -m Examples.RpgExample.RpgExampleComparative)

@@ -193,3 +193,7 @@ class ConsumerDemo:
         # print(f"Executing {action_instance.Name}. Params: {action_instance._parameters}")
         return ExecutionStatus.Succeeded
 
+
+if __name__ == "__main__":
+    ConsumerDemo.run()
+

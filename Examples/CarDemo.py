@@ -93,3 +93,7 @@ class CarDemo:
         # print(f"Executing {action_instance.Name}")
         return ExecutionStatus.Succeeded
 
+
+if __name__ == "__main__":
+    CarDemo.run()
+

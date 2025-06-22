@@ -74,3 +74,7 @@ class ComparativeHappinessIncrementer:
         print("Seeking even greater happiness.")
         return ExecutionStatus.Succeeded
 
+
+if __name__ == "__main__":
+    ComparativeHappinessIncrementer.run()
+

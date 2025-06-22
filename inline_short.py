@@ -589,7 +589,8 @@ class ActionAStar:
         # Add debugging for A* search
         is_debug_search = False
         if hasattr(start.State, 'get') and (start.State.get('faction') == 'enemy' or start.State.get('faction') == 'player'):
-            is_debug_search = start.State.get("food_eaten") == 4
+            # is_debug_search = start.State.get("food_eaten") == 4
+            is_debug_search = start.State.get('faction') == 'player'
             if is_debug_search:
                 print(f"    A* DEBUG: Starting search for goal {goal.Name}")
                 print(f"      Start state: food_eaten={start.State.get('food_eaten')}, canSeeFood={start.State.get('canSeeFood')}, nearFood={start.State.get('nearFood')}, canSeeEnemies={start.State.get('canSeeEnemies')}")
@@ -1948,10 +1949,11 @@ class RpgCharacterFactory:
 class PlayerFactory:
     @staticmethod
     def create(
-        agents: List["Agent"], food_positions: List[Vector2], name: str = "Player"
+        agents: List["Agent"], food_positions: List[Vector2], name: str = "Player", use_extreme=False
     ) -> "Agent":
-        USE_EXTREME_GOAL = os.getenv("USE_EXTREME_GOAL", "false").lower() == "true"
-        if USE_EXTREME_GOAL:
+
+        
+        if use_extreme:
             food_goal = ExtremeGoal(
                 name="Maximize Food Eaten",
                 weight=1.0,
@@ -2033,6 +2035,7 @@ class PlayerFactory:
             executor=rest_executor,
             preconditions={"well_rested": False},
             postconditions={"well_rested": True, "stretched": False},
+            cost_callback=lambda agent_instance, action_instance: 100,
         )
         
         def walk_around_executor(agent_instance, action_instance):
@@ -2044,6 +2047,7 @@ class PlayerFactory:
             executor=walk_around_executor,
             preconditions={"stretched": False},
             postconditions={"stretched": True, "well_rested": False},
+            cost_callback=lambda agent_instance, action_instance: 100,
         )
         agent = Agent(
             name=name,
@@ -2166,7 +2170,7 @@ BLUE = (0, 0, 255)
 
 class RpgExampleComparativePygame:
     @staticmethod
-    def run() -> None:
+    def run(use_extreme) -> None:
 
 
         pygame.init()
@@ -2178,7 +2182,7 @@ class RpgExampleComparativePygame:
         agents: List[Agent] = []
         food_positions: List[Vector2] = []
 
-        player = PlayerFactory.create(agents, food_positions)
+        player = PlayerFactory.create(agents, food_positions, use_extreme=use_extreme)
         agents.append(player)
 
         for _ in range(20):
@@ -2283,4 +2287,4 @@ class RpgExampleComparativePygame:
 
 
 if __name__ == "__main__":
-    RpgExampleComparativePygame.run()
+    RpgExampleComparativePygame.run(False)

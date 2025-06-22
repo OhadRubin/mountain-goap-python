@@ -66,10 +66,18 @@ class ActionNode(FastPriorityQueueNode):
         Overrides the hash code generation for ActionNodes.
         A hashable representation of the state is needed.
         """
-        # For hashing, dictionaries are not hashable by default.
-        # We need a canonical representation of the state dictionary.
-        # Convert dictionary to a sorted tuple of (key, value) pairs.
-        state_tuple = tuple(sorted(self.State.items()))
+        def _make_hashable(value: Any) -> Any:
+            """Recursively convert lists/dicts to tuples for hashing."""
+            if isinstance(value, dict):
+                return tuple(sorted((k, _make_hashable(v)) for k, v in value.items()))
+            if isinstance(value, list):
+                return tuple(_make_hashable(v) for v in value)
+            if isinstance(value, set):
+                return tuple(sorted(_make_hashable(v) for v in value))
+            return value
+
+        # Convert state dictionary to a hashable representation
+        state_tuple = tuple(sorted((k, _make_hashable(v)) for k, v in self.State.items()))
         
         # Ensure action is hashable, or use its hash directly if it has one.
         # If Action is a custom object and not hashable, we'd need to define its __hash__

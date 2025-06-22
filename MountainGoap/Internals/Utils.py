@@ -145,7 +145,7 @@ class Utils:
                     if not Utils.is_lower_than(current_value, desired_value):
                         return False
                 elif operator == ComparisonOperator.GreaterThan:
-                    if not Utils.is_higher_than(current_value, desired_value):
+                    if not Utils.is_higher_than_or_equals(current_value, desired_value):
                         return False
                 elif operator == ComparisonOperator.LessThanOrEquals:
                     if not Utils.is_lower_than_or_equals(current_value, desired_value):

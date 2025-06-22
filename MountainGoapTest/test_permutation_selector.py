@@ -16,7 +16,7 @@ from MountainGoap.Sensor import Sensor
 from MountainGoap.StepMode import StepMode
 from typing import Dict, Any, List, Optional
 
-class PermutationSelectorTests:
+class TestPermutationSelector:
     @pytest.fixture(autouse=True) # Ensure events are cleared for each test
     def _fixture_setup(self, setup_teardown_events):
         pass

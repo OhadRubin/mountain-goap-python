@@ -12,7 +12,7 @@ from MountainGoap.ComparisonValuePair import ComparisonValuePair
 from MountainGoap.ExecutionStatus import ExecutionStatus
 from MountainGoap.StepMode import StepMode
 
-class ArithmeticPostconditionsTests:
+class TestArithmeticPostconditions:
     @pytest.fixture(autouse=True) # Ensure events are cleared for each test
     def _fixture_setup(self, setup_teardown_events):
         pass

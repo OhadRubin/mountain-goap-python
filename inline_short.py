@@ -4,6 +4,7 @@ import math
 import uuid
 import threading
 import os  # For USE_EXTREME_GOAL environment variable
+import decimal
 from typing import (
     Callable,
     Dict,
@@ -94,7 +95,6 @@ SensorRunEvent = Callable[["Agent", "Sensor"], None]
 class FastPriorityQueueNode:
     Priority: float
     QueueIndex: int
-    _queue: object = None  # Internal reference to the queue for debugging/validation
 
     def __init__(self):
         self.Priority = 0.0
@@ -107,17 +107,13 @@ T = TypeVar("T", bound=FastPriorityQueueNode)
 
 class FastPriorityQueue:
     _num_nodes: int
-    _nodes: List[Optional[T]]
-    _node_to_index: Dict[T, int]
-    _insertion_order: int
+    _nodes: List[T]
 
     def __init__(self, max_nodes: int):
         if max_nodes <= 0:
             raise ValueError("New queue size cannot be smaller than 1")
         self._num_nodes = 0
-        self._nodes = [None] * (max_nodes + 1)
-        self._node_to_index = {}
-        self._insertion_order = 0
+        self._nodes = [cast(T, None)] * (max_nodes + 1)
 
     @property
     def count(self) -> int:
@@ -128,49 +124,37 @@ class FastPriorityQueue:
         return len(self._nodes) - 1
 
     def clear(self) -> None:
-        # This mimics Array.Clear by creating a new list of Nones and resetting the counter.
-        # It's the Pythonic equivalent of the C# fast-but-unsafe clear.
-        self._nodes = [None] * (self.max_size + 1)
-        self._node_to_index.clear()
+        # Mimic C#'s Array.Clear by setting elements to None in place.
+        # Also, reset node's internal state to indicate it's no longer in a queue.
+        # Starting from index 1 as the 0th element is unused in this heap implementation.
+        for i in range(1, self._num_nodes + 1):
+            node_to_clear = self._nodes[i]
+            if node_to_clear is not None:
+                # Reset the node's internal queue state, as if it was removed/reset
+                node_to_clear.QueueIndex = 0
+            self._nodes[i] = cast(T, None)  # Set the array slot to None
         self._num_nodes = 0
-        self._insertion_order = 0
 
     def contains(self, node: T) -> bool:
         if node is None:
             raise ValueError("node cannot be None")
-        if hasattr(node, "_queue") and node._queue is not None and node._queue != self:
-            raise RuntimeError(
-                "node.contains was called on a node from another queue. Please call originalQueue.reset_node() first"
-            )
-        is_in_cache = node in self._node_to_index
+        # C# only checks: return (_nodes[node.QueueIndex] == node);
+        # Python should rely only on node.QueueIndex being valid and pointing to itself in _nodes
         is_at_correct_index = (
-            is_in_cache
-            and self._node_to_index[node] == node.QueueIndex
+            0 < node.QueueIndex <= self._num_nodes  # Ensure index is within bounds of active nodes
             and self._nodes[node.QueueIndex] == node
         )
-        if is_in_cache and not is_at_correct_index:
-            raise RuntimeError(
-                "node.QueueIndex has been corrupted. Did you change it manually? Or add this node to another queue?"
-            )
-        return is_at_correct_index
+        return is_at_correct_index  # Direct check, no dict lookup
 
     def enqueue(self, node: T, priority: float) -> None:
         if node is None:
             raise ValueError("node cannot be None")
         if self._num_nodes >= self.max_size:
             raise RuntimeError("Queue is full - node cannot be added")
-        if hasattr(node, "_queue") and node._queue is not None and node._queue != self:
-            raise RuntimeError(
-                "node.enqueue was called on a node from another queue. Please call originalQueue.reset_node() first"
-            )
-        if self.contains(node):
-            raise RuntimeError(f"Node is already enqueued: {node}")
         node.Priority = priority
         self._num_nodes += 1
         node.QueueIndex = self._num_nodes
         self._nodes[self._num_nodes] = node
-        self._node_to_index[node] = self._num_nodes
-        node._queue = self
         self._cascade_up(node)
 
     def _cascade_up(self, node: T) -> None:
@@ -183,10 +167,8 @@ class FastPriorityQueue:
             self._nodes[current_index] = parent_node
             if parent_node is not None:
                 parent_node.QueueIndex = current_index
-                self._node_to_index[parent_node] = current_index
             self._nodes[parent_index] = node
             node.QueueIndex = parent_index
-            self._node_to_index[node] = parent_index
             current_index = parent_index
 
     def _cascade_down(self, node: T) -> None:
@@ -214,22 +196,14 @@ class FastPriorityQueue:
             self._nodes[current_index] = swap_node
             if swap_node is not None:
                 swap_node.QueueIndex = current_index
-                self._node_to_index[swap_node] = current_index
             self._nodes[swap_index] = node
             node.QueueIndex = swap_index
-            self._node_to_index[node] = swap_index
             current_index = swap_index
 
-    def _has_higher_priority(self, higher: Optional[T], lower: Optional[T]) -> bool:
-        if higher is None or lower is None:
-            return False
+    def _has_higher_priority(self, higher: T, lower: T) -> bool:
         return higher.Priority < lower.Priority
 
-    def _has_higher_or_equal_priority(
-        self, higher: Optional[T], lower: Optional[T]
-    ) -> bool:
-        if higher is None or lower is None:
-            return False
+    def _has_higher_or_equal_priority(self, higher: T, lower: T) -> bool:
         return higher.Priority <= lower.Priority
 
     def dequeue(self) -> T:
@@ -240,22 +214,17 @@ class FastPriorityQueue:
             raise RuntimeError("Heap root is unexpectedly None")
         if self._num_nodes == 1:
             self._nodes[1] = None
-            del self._node_to_index[return_me]
             self._num_nodes = 0
             return_me.QueueIndex = 0
-            return_me._queue = None
             return return_me
         former_last_node = self._nodes[self._num_nodes]
         if former_last_node is None:
             raise RuntimeError("Last node is unexpectedly None")
         self._nodes[1] = former_last_node
         former_last_node.QueueIndex = 1
-        self._node_to_index[former_last_node] = 1
         self._nodes[self._num_nodes] = None
         self._num_nodes -= 1
-        del self._node_to_index[return_me]
         return_me.QueueIndex = 0
-        return_me._queue = None
         self._cascade_down(former_last_node)
         return return_me
 
@@ -282,14 +251,6 @@ class FastPriorityQueue:
     def update_priority(self, node: T, priority: float) -> None:
         if node is None:
             raise ValueError("node cannot be None")
-        if hasattr(node, "_queue") and node._queue is not None and node._queue != self:
-            raise RuntimeError(
-                "node.update_priority was called on a node from another queue"
-            )
-        if not self.contains(node):
-            raise RuntimeError(
-                f"Cannot call update_priority() on a node which is not enqueued: {node}"
-            )
         old_priority = node.Priority
         node.Priority = priority
         self._on_node_updated(node)
@@ -304,18 +265,10 @@ class FastPriorityQueue:
     def remove(self, node: T) -> None:
         if node is None:
             raise ValueError("node cannot be None")
-        if hasattr(node, "_queue") and node._queue is not None and node._queue != self:
-            raise RuntimeError("node.remove was called on a node from another queue")
-        if not self.contains(node):
-            raise RuntimeError(
-                f"Cannot call remove() on a node which is not enqueued: {node}"
-            )
         if node.QueueIndex == self._num_nodes:
             self._nodes[self._num_nodes] = None
-            del self._node_to_index[node]
             self._num_nodes -= 1
             node.QueueIndex = 0
-            node._queue = None
             return
         former_last_node = self._nodes[self._num_nodes]
         if former_last_node is None:
@@ -325,27 +278,15 @@ class FastPriorityQueue:
         old_priority_of_former_last_node = former_last_node.Priority
         self._nodes[node.QueueIndex] = former_last_node
         former_last_node.QueueIndex = node.QueueIndex
-        self._node_to_index[former_last_node] = node.QueueIndex
         self._nodes[self._num_nodes] = None
         self._num_nodes -= 1
-        del self._node_to_index[node]
         node.QueueIndex = 0
-        node._queue = None
         self._on_node_updated(former_last_node)
 
     def reset_node(self, node: T) -> None:
         if node is None:
             raise ValueError("node cannot be None")
-        if hasattr(node, "_queue") and node._queue is not None and node._queue != self:
-            raise RuntimeError(
-                "node.reset_node was called on a node from another queue"
-            )
-        if self.contains(node):
-            raise RuntimeError(
-                "node.reset_node was called on a node that is still in the queue"
-            )
         node.QueueIndex = 0
-        node._queue = None
 
     def __iter__(self) -> Iterable[T]:
         active_nodes = []
@@ -362,8 +303,6 @@ class FastPriorityQueue:
                 return False
             if current_node.QueueIndex != i:
                 return False
-            if current_node._queue != self:
-                return False
             child_left_index = 2 * i
             if child_left_index <= self._num_nodes:
                 child_left = self._nodes[child_left_index]
@@ -378,14 +317,6 @@ class FastPriorityQueue:
                     child_right, current_node
                 ):
                     return False
-            if (
-                current_node not in self._node_to_index
-                or self._node_to_index[current_node] != i
-            ):
-                return False
-        for node, index in self._node_to_index.items():
-            if not (1 <= index <= self._num_nodes and self._nodes[index] == node):
-                return False
         return True
 
 
@@ -450,11 +381,59 @@ class ActionNode(FastPriorityQueueNode):
 
     def __ne__(self, other: object) -> bool:
         return not self.__eq__(other)
-
+    
     def __hash__(self) -> int:
         action_hash = hash(self.Action) if self.Action is not None else hash(None)
-        # Incorrectly hash the object's ID, not its contents, to match C#
-        state_hash = id(self.State) 
+        
+        def make_hashable(obj):
+            """Recursively convert objects to hashable form, or return None if not possible."""
+            if obj is None:
+                return None
+            
+            # Try basic types first
+            try:
+                hash(obj)
+                return obj
+            except TypeError:
+                pass
+            
+            # Handle lists/tuples recursively
+            if isinstance(obj, (list, tuple)):
+                try:
+                    hashable_items = []
+                    for item in obj:
+                        hashable_item = make_hashable(item)
+                        if hashable_item is None:
+                            return None  # Skip entire list if any item is unhashable
+                        hashable_items.append(hashable_item)
+                    return tuple(hashable_items)
+                except:
+                    return None
+            
+            # Handle dicts recursively
+            if isinstance(obj, dict):
+                try:
+                    hashable_items = []
+                    for k, v in obj.items():
+                        hashable_k = make_hashable(k)
+                        hashable_v = make_hashable(v)
+                        if hashable_k is None or hashable_v is None:
+                            return None  # Skip entire dict if any item is unhashable
+                        hashable_items.append((hashable_k, hashable_v))
+                    return tuple(sorted(hashable_items))
+                except:
+                    return None
+            
+            # For other objects, return None (skip from hash)
+            return None
+        
+        hashable_items = []
+        for key, value in self.State.items():
+            hashable_value = make_hashable(value)
+            if hashable_value is not None:
+                hashable_items.append((key, hashable_value))
+        
+        state_hash = hash(frozenset(hashable_items))
         return hash((action_hash, state_hash))
 
     def cost(self, current_state: StateDictionary) -> float:
@@ -472,9 +451,8 @@ class ActionNode(FastPriorityQueueNode):
         for key, value in other_node.State.items():
             if key not in self.State:
                 return False
-            # This is the C# bug: it compares other_node.State[key] to value from other_node.State
-            # The correct line would be: if self.State[key] != value:
-            if other_node.State[key] != value: 
+            # Fixed: Compare other_node's value against self's value for the same key
+            if self.State.get(key) != value:
                 return False
         return True
 
@@ -513,53 +491,45 @@ class Utils:
     def is_lower_than(a: Any, b: Any) -> bool:
         if a is None or b is None:
             return False
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        # Add decimal.Decimal to the numeric type check
+        if isinstance(a, (int, float, decimal.Decimal)) and isinstance(b, (int, float, decimal.Decimal)):
             return a < b
         if isinstance(a, datetime) and isinstance(b, datetime):
             return a < b
-        try:
-            return a < b
-        except TypeError:
-            return False
+        return False
 
     @staticmethod
     def is_higher_than(a: Any, b: Any) -> bool:
         if a is None or b is None:
             return False
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        # Add decimal.Decimal to the numeric type check
+        if isinstance(a, (int, float, decimal.Decimal)) and isinstance(b, (int, float, decimal.Decimal)):
             return a > b
         if isinstance(a, datetime) and isinstance(b, datetime):
             return a > b
-        try:
-            return a > b
-        except TypeError:
-            return False
+        return False
 
     @staticmethod
     def is_lower_than_or_equals(a: Any, b: Any) -> bool:
         if a is None or b is None:
             return False
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        # Add decimal.Decimal to the numeric type check
+        if isinstance(a, (int, float, decimal.Decimal)) and isinstance(b, (int, float, decimal.Decimal)):
             return a <= b
         if isinstance(a, datetime) and isinstance(b, datetime):
             return a <= b
-        try:
-            return a <= b
-        except TypeError:
-            return False
+        return False
 
     @staticmethod
     def is_higher_than_or_equals(a: Any, b: Any) -> bool:
         if a is None or b is None:
             return False
-        if isinstance(a, (int, float)) and isinstance(b, (int, float)):
+        # Add decimal.Decimal to the numeric type check
+        if isinstance(a, (int, float, decimal.Decimal)) and isinstance(b, (int, float, decimal.Decimal)):
             return a >= b
         if isinstance(a, datetime) and isinstance(b, datetime):
             return a >= b
-        try:
-            return a >= b
-        except TypeError:
-            return False
+        return False
 
     @staticmethod
     def meets_goal(
@@ -580,37 +550,65 @@ class Utils:
                 return False
             for key, maximize in goal.DesiredState.items():
                 if key not in action_node.State or key not in current.State:
-                    return False
+                    return False  # Key must exist in both nodes for ExtremeGoal
+                
                 current_value = action_node.State[key]
                 previous_value = current.State[key]
-                if maximize:
-                    if not Utils.is_higher_than(current_value, previous_value):
-                        return False
-                else:
-                    if not Utils.is_lower_than(current_value, previous_value):
-                        return False
+
+                # C# only performs comparison if both values are not null.
+                # If either is None, C# effectively skips this KVP, so Python should too.
+                if current_value is not None and previous_value is not None:
+                    if maximize:
+                        # Also incorporates fix from Todo 3 for comparison operator
+                        if not Utils.is_higher_than_or_equals(current_value, previous_value): 
+                            return False
+                    else:  # minimize
+                        # Also incorporates fix from Todo 3 for comparison operator
+                        if not Utils.is_lower_than_or_equals(current_value, previous_value):
+                            return False
+                # If current_value or previous_value is None, and we reach here, C# would continue.
+                # So Python should too. No explicit `return False` for the `None` case.
             return True
         elif isinstance(goal, ComparativeGoal):
             if action_node.Action is None:
                 return False
             for key, comparison_value_pair in goal.DesiredState.items():
-                if key not in action_node.State or key not in current.State:
-                    return False
+                # C# explicitly checks for key in both actionNode.State and current.State
+                if key not in action_node.State:
+                    return False  # Key must exist in action_node's state
+                if key not in current.State:
+                    print(f"FIX4 DEBUG: ComparativeGoal key '{key}' missing from current.State - would cause KeyError")
+                    assert False
+                    return False  # Added check for current.State - this is the fix!
+                
                 current_value = action_node.State[key]
                 desired_value = comparison_value_pair.Value
                 operator = comparison_value_pair.Operator
-                if desired_value is None and operator != ComparisonOperator.Undefined:
+
+                if operator == ComparisonOperator.Undefined:
                     return False
-                if operator == ComparisonOperator.LessThan:
+
+                if operator == ComparisonOperator.Equals:
+                    if current_value != desired_value:  # Handles None vs None (True) and None vs Value (False) correctly
+                        return False
+                elif operator == ComparisonOperator.LessThan:
+                    if current_value is None or desired_value is None:  # If either is None, C# fails the goal
+                        return False
                     if not Utils.is_lower_than(current_value, desired_value):
                         return False
                 elif operator == ComparisonOperator.GreaterThan:
+                    if current_value is None or desired_value is None:  # If either is None, C# fails the goal
+                        return False
                     if not Utils.is_higher_than(current_value, desired_value):
                         return False
                 elif operator == ComparisonOperator.LessThanOrEquals:
+                    if current_value is None or desired_value is None:  # If either is None, C# fails the goal
+                        return False
                     if not Utils.is_lower_than_or_equals(current_value, desired_value):
                         return False
                 elif operator == ComparisonOperator.GreaterThanOrEquals:
+                    if current_value is None or desired_value is None:  # If either is None, C# fails the goal
+                        return False
                     if not Utils.is_higher_than_or_equals(current_value, desired_value):
                         return False
             return True
@@ -619,10 +617,6 @@ class Utils:
 
 # Original content from ActionAStar.py
 class ActionAStar:
-    FinalPoint: Optional[ActionNode] = None
-    CostSoFar: Dict[ActionNode, float] = {}
-    StepsSoFar: Dict[ActionNode, int] = {}
-    CameFrom: Dict[ActionNode, ActionNode] = {}
     _goal: "BaseGoal"
 
     def __init__(
@@ -634,6 +628,11 @@ class ActionAStar:
         step_maximum: int,
     ):
         self._goal = goal
+        self.FinalPoint: Optional[ActionNode] = None
+        self.CostSoFar: Dict[ActionNode, float] = {}
+        self.StepsSoFar: Dict[ActionNode, int] = {}
+        self.CameFrom: Dict[ActionNode, ActionNode] = {}
+        
         frontier = FastPriorityQueue(100000)
         frontier.enqueue(start, 0.0)
         self.CameFrom[start] = start
@@ -704,11 +703,17 @@ class ActionAStar:
                     continue
                 value_diff = current_val_f - prev_val_f
                 if maximize:
-                    if Utils.is_higher_than_or_equals(current_val_f, prev_val_f):
-                        cost -= value_diff * value_diff_multiplier
-                else: # minimize
+                    # C# penalizes if current_val_f <= prev_val_f (no progress or regression)
+                    # value_diff = current_val_f - prev_val_f will be negative or zero.
+                    # C#: cost -= valueDiff * valueDiffMultiplier => cost + (-(current-prev)) * multiplier => cost + |current-prev| * multiplier
                     if Utils.is_lower_than_or_equals(current_val_f, prev_val_f):
-                        cost += value_diff * value_diff_multiplier
+                        cost += abs(value_diff) * value_diff_multiplier
+                else: # minimize
+                    # C# penalizes if current_val_f >= prev_val_f (no progress or regression)
+                    # value_diff = current_val_f - prev_val_f will be positive or zero.
+                    # C#: cost += valueDiff * valueDiffMultiplier => cost + (current-prev) * multiplier => cost + |current-prev| * multiplier
+                    if Utils.is_higher_than_or_equals(current_val_f, prev_val_f):
+                        cost += abs(value_diff) * value_diff_multiplier
         elif isinstance(goal, ComparativeGoal):
             for key, comp_value_pair in goal.DesiredState.items():
                 value_diff_multiplier = (
@@ -720,6 +725,8 @@ class ActionAStar:
                     key not in action_node.State
                     or key not in previous_node_in_path.State
                 ):
+                    print(f"FIX4 DEBUG: Heuristic - key '{key}' missing from states, adding inf cost")
+                    assert False
                     cost += float("inf")
                     continue
                 current_val = action_node.State[key]
@@ -772,11 +779,15 @@ class Planner:
 
     @staticmethod
     def plan(agent: "Agent", cost_maximum: float, step_maximum: int) -> None:
+        if "Monster" in agent.Name:
+            print(f"PLANNER DEBUG: Starting planning for {agent.Name}")
         Agent.OnPlanningStarted(agent)
         best_plan_utility = 0.0
         best_astar: Optional[ActionAStar] = None
         best_goal: Optional["BaseGoal"] = None
         for goal in agent.Goals:
+            if "Monster" in agent.Name:
+                print(f"  Planning for goal: {goal.Name}")
             Agent.OnPlanningStartedForSingleGoal(agent, goal)
             graph = ActionGraph(agent.Actions, agent.State)
             start_node = ActionNode(None, agent.State, {})
@@ -786,19 +797,35 @@ class Planner:
             cursor = astar_result.FinalPoint
             current_goal_utility = 0.0
             if cursor is not None:
+                if "Monster" in agent.Name:
+                    print(f"    A* found solution for {goal.Name}")
+            else:
+                if "Monster" in agent.Name:
+                    print(f"    A* found NO solution for {goal.Name}")
+            if cursor is not None:
                 plan_cost = astar_result.CostSoFar.get(cursor, 0.0)
-                # Add the check to prevent division by zero
-                if plan_cost > 0:
-                    current_goal_utility = goal.Weight / plan_cost
-                    Agent.OnPlanningFinishedForSingleGoal(agent, goal, current_goal_utility)
-                    # Add the check from C# here:
-                    if cursor.Action is not None and current_goal_utility > best_plan_utility:
-                        best_plan_utility = current_goal_utility
-                        best_astar = astar_result
-                        best_goal = goal
+
+                # C# logs 0 utility for 0 cost, but for actual comparison, it uses Weight / Cost (Infinity).
+                # Mimic C#'s behavior for the logging event:
+                reported_utility = 0.0
+                if plan_cost == 0:
+                    reported_utility = 0.0  # C# logs 0.0 if cost is 0
                 else:
-                    # If cost is 0, utility is 0.
-                    Agent.OnPlanningFinishedForSingleGoal(agent, goal, 0.0)
+                    reported_utility = goal.Weight / plan_cost
+                Agent.OnPlanningFinishedForSingleGoal(agent, goal, reported_utility)
+
+                # For the actual best_plan_utility comparison, C# uses the result of the division,
+                # which can be float.PositiveInfinity if plan_cost is 0 and goal.Weight > 0.
+                comparison_utility = reported_utility  # Start with reported_utility
+                if plan_cost == 0 and goal.Weight > 0:
+                    comparison_utility = float('inf')
+                elif plan_cost == 0 and goal.Weight <= 0:  # Handle Weight 0 or negative with 0 cost, resulting in NaN or -inf in C#
+                    comparison_utility = float('nan') if goal.Weight == 0 else float('-inf')
+
+                if cursor.Action is not None and comparison_utility > best_plan_utility:
+                    best_plan_utility = comparison_utility
+                    best_astar = astar_result
+                    best_goal = goal
             else:
                 Agent.OnPlanningFinishedForSingleGoal(agent, goal, 0.0)
         if (
@@ -820,10 +847,12 @@ class Planner:
     ) -> None:
         cursor: Optional[ActionNode] = start_node
         action_list: List["Action"] = []
-        while cursor is not None and cursor != astar.CameFrom[cursor]:
-            if cursor.Action is not None:
-                action_list.append(cursor.Action)
-            cursor = astar.CameFrom.get(cursor)
+        while cursor is not None and cursor.Action is not None and cursor in astar.CameFrom:
+            action_list.append(cursor.Action)
+            prev_cursor = astar.CameFrom.get(cursor)
+            # C# relies on `cursor.Action != null` (where start node has null action) to terminate.
+            # Remove the extra check for `cursor == prev_cursor` to match C#'s more implicit termination.
+            cursor = prev_cursor
         action_list.reverse()
         agent.CurrentActionSequences.append(action_list)
         Agent.OnPlanUpdated(agent, action_list)
@@ -1114,7 +1143,7 @@ class Action:
     def copy(self) -> "Action":
         new_action = Action(
             name=self.Name,
-            permutation_selectors=self._permutation_selectors.copy(),
+            permutation_selectors=self._permutation_selectors,
             executor=self._executor,
             cost=self._cost_base,
             cost_callback=self._cost_callback,
@@ -1182,25 +1211,36 @@ class Action:
                 if current_value != value: # In Python, `!=` calls `__ne__`, which is the correct equivalent to C#'s `!Equals()`
                     return False
         for key, comp_value_pair in self._comparative_preconditions.items():
-            if key not in state or state[key] is None:
+            if key not in state:  # Key must exist
                 return False
+            
             current_val = state[key]
             desired_val = comp_value_pair.Value
             operator = comp_value_pair.Operator
-            if desired_val is None and operator != ComparisonOperator.Undefined:
+
+            if operator == ComparisonOperator.Undefined:
                 return False
-            if operator == ComparisonOperator.LessThan:
-                if not Utils.is_lower_than(current_val, desired_val):
+
+            if operator == ComparisonOperator.Equals:
+                if current_val != desired_val:
                     return False
-            elif operator == ComparisonOperator.GreaterThan:
-                if not Utils.is_higher_than(current_val, desired_val):
-                    return False
-            elif operator == ComparisonOperator.LessThanOrEquals:
-                if not Utils.is_lower_than_or_equals(current_val, desired_val):
-                    return False
-            elif operator == ComparisonOperator.GreaterThanOrEquals:
-                if not Utils.is_higher_than_or_equals(current_val, desired_val):
-                    return False
+            elif current_val is None or desired_val is None:
+                # C# explicitly fails if current_val or desired_val is null for relational ops
+                return False
+            else:
+                # Both current_val and desired_val are guaranteed to be non-None here
+                if operator == ComparisonOperator.LessThan:
+                    if not Utils.is_lower_than(current_val, desired_val):
+                        return False
+                elif operator == ComparisonOperator.GreaterThan:
+                    if not Utils.is_higher_than(current_val, desired_val):
+                        return False
+                elif operator == ComparisonOperator.LessThanOrEquals:
+                    if not Utils.is_lower_than_or_equals(current_val, desired_val):
+                        return False
+                elif operator == ComparisonOperator.GreaterThanOrEquals:
+                    if not Utils.is_higher_than_or_equals(current_val, desired_val):
+                        return False
         if self._state_checker is not None and not self._state_checker(self, state):
             return False
         return True
@@ -1209,7 +1249,7 @@ class Action:
         self, state: StateDictionary
     ) -> List[Dict[str, Optional[Any]]]:
         if not self._permutation_selectors:
-            return [{}] # Return one empty permutation if there are no selectors
+            return []  # Match C# behavior: no permutations if no selectors
 
         combined_outputs: List[Dict[str, Optional[Any]]] = []
         outputs: Dict[str, List[Any]] = {}
@@ -1301,8 +1341,6 @@ class Agent:
     Sensors: List[Sensor]
     CostMaximum: float
     StepMaximum: int
-    IsBusy: bool = False
-    IsPlanning: bool = False
     _on_agent_step_handlers: List[AgentStepEvent] = []
     _on_agent_action_sequence_completed_handlers: List[
         AgentActionSequenceCompletedEvent
@@ -1424,18 +1462,29 @@ class Agent:
         self.StepMaximum = step_maximum
         # Initialize instance-specific list
         self.CurrentActionSequences = []
-        # IsBusy and IsPlanning are now inherited from the class default
+        # Initialize instance-specific state flags
+        self.IsBusy = False
+        self.IsPlanning = False
 
     def step(self, mode: StepMode = StepMode.Default) -> None:
+        print(f"DEBUG: {self.Name} step() called, mode={mode}")
         Agent.OnAgentStep(self)
         for sensor in self.Sensors:
             sensor.run(self)
         if mode == StepMode.Default:
+            print(f"DEBUG: {self.Name} taking default async path")
             self._step_async()
             return
+        print(f"DEBUG: {self.Name} IsBusy={self.IsBusy}, will plan if not busy")
         if not self.IsBusy:
+            print(f"DEBUG: {self.Name} calling planner")
+            if "Monster" in self.Name:
+                print(f"  Monster state: canSeeEnemies={self.State.get('canSeeEnemies')}, canSeeFood={self.State.get('canSeeFood')}, nearEnemy={self.State.get('nearEnemy')}, nearFood={self.State.get('nearFood')}")
+                print(f"  Monster goals: {[g.Name for g in self.Goals]}")
+                print(f"  Monster actions: {[a.Name for a in self.Actions]}")
             Planner.plan(self, self.CostMaximum, self.StepMaximum)
         if mode == StepMode.OneAction:
+            print(f"DEBUG: {self.Name} executing one action")
             self._execute()
         elif mode == StepMode.AllActions:
             while self.IsBusy:
@@ -1472,12 +1521,15 @@ class Agent:
             self._execute()
 
     def _execute(self) -> None:
+        print(f"DEBUG: {self.Name}._execute() called, sequences count: {len(self.CurrentActionSequences)}")
         if len(self.CurrentActionSequences) > 0:
             cullable_sequences = []
             for sequence in self.CurrentActionSequences:
                 if len(sequence) > 0:
                     action_to_execute = sequence[0]
+                    print(f"{self.Name} executing action: {action_to_execute.Name}")
                     execution_status = action_to_execute.execute(self)
+                    print(f"{self.Name} action {action_to_execute.Name} status: {execution_status}")
                     if execution_status != ExecutionStatus.Executing:
                         sequence.pop(0)
                     if len(sequence) == 0:
@@ -1487,8 +1539,11 @@ class Agent:
             for sequence in cullable_sequences:
                 self.CurrentActionSequences.remove(sequence)
                 Agent.OnAgentActionSequenceCompleted(self)
-            # The IsBusy recalculation is REMOVED from here.
+            # Check if agent has run out of plans and should no longer be busy
+            if not self.CurrentActionSequences:
+                self.IsBusy = False
         else:
+            print(f"DEBUG: {self.Name} has no action sequences to execute")
             # IsBusy is only set to False if there were no sequences to start with.
             self.IsBusy = False
 
@@ -1712,7 +1767,9 @@ class CommonRpgAgentHandlers:
                 agent_position, target_position
             )
             agent_instance.State["position"] = new_position
+            print(f"{agent_instance.Name} moving toward {target_agent.Name} from {agent_position} to {new_position}")
             if RpgUtils.in_distance(new_position, target_position, 1.0):
+                print(f"{agent_instance.Name} reached {target_agent.Name}!")
                 return ExecutionStatus.Succeeded
             else:
                 return ExecutionStatus.Executing
@@ -1764,9 +1821,12 @@ class CommonRpgAgentHandlers:
             new_y = agent_position.Y + CommonRpgAgentHandlers._rng.randint(-1, 1)
             new_x = max(0, min(new_x, MaxX - 1))
             new_y = max(0, min(new_y, MaxY - 1))
-            agent_instance.State["position"] = Vector2(new_x, new_y)
+            new_position = Vector2(new_x, new_y)
+            agent_instance.State["position"] = new_position
+            print(f"{agent_instance.Name} searching for food, moved from {agent_position} to {new_position}")
         can_see_food = agent_instance.State.get("canSeeFood")
         if isinstance(can_see_food, bool) and can_see_food:
+            print(f"{agent_instance.Name} found food!")
             return ExecutionStatus.Succeeded
         return ExecutionStatus.Failed
 
@@ -1872,7 +1932,7 @@ class PlayerFactory:
         agents: List["Agent"], food_positions: List[Vector2], name: str = "Player"
     ) -> "Agent":
         USE_EXTREME_GOAL = os.getenv("USE_EXTREME_GOAL", "false").lower() == "true"
-        if False:
+        if USE_EXTREME_GOAL:
             food_goal = ExtremeGoal(
                 name="Maximize Food Eaten",
                 weight=1.0,
@@ -1945,9 +2005,13 @@ class PlayerFactory:
             preconditions={"nearFood": True},
             arithmetic_postconditions={"food_eaten": 1},
         )
+        def rest_executor(agent_instance, action_instance):
+            print(f"{agent_instance.Name} is resting")
+            return ExecutionStatus.Succeeded
+            
         rest_action = Action(
             name="Rest",
-            executor=lambda agent_instance, action_instance: ExecutionStatus.Succeeded,
+            executor=rest_executor,
             preconditions={
                 "canSeeEnemies": False,
                 "canSeeFood": False,
@@ -2091,7 +2155,7 @@ class RpgExampleComparativePygame:
                 Vector2(_random.randint(0, MaxX - 1), _random.randint(0, MaxY - 1))
             )
 
-        for _ in range(10):
+        for _ in range(3):
             monster = RpgMonsterFactory.create(agents, food_positions)
             monster.State["position"] = Vector2(
                 _random.randint(0, MaxX - 1), _random.randint(0, MaxY - 1)
@@ -2114,12 +2178,11 @@ class RpgExampleComparativePygame:
 
                 # Iterate on a copy of the agents list to safely handle agents being removed (defeated)
                 for agent in list(agents):
-                    if (
-                        agent in agents
-                    ):  # Check if agent wasn't removed by a previous death this turn
+                    if agent in agents:  # Check if agent wasn't removed by a previous death this turn
+                        print(f"DEBUG: Processing agent {agent.Name}, IsBusy={agent.IsBusy}, IsPlanning={agent.IsPlanning}")
                         agent.step(mode=StepMode.OneAction)
-
-                RpgExampleComparativePygame._process_deaths(agents)
+                        # Process deaths immediately after each action to prevent dead agents from acting
+                        RpgExampleComparativePygame._process_deaths(agents)
                 last_update = current_time
 
                 if player not in agents:

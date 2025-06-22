@@ -23,46 +23,7 @@ from datetime import datetime, timedelta
 # A type alias for the state dictionary (defined once globally)
 StateDictionary = Dict[str, Optional[Any]]
 
-
-# --- DefaultLogger Placeholder ---
-# This class is a placeholder for the DefaultLogger, which was referenced but not provided.
-# It ensures the application can run without a missing dependency.
-class DefaultLogger:
-    def __init__(
-        self,
-        log_to_console: bool = True,
-        logging_file: str = "default.log",
-        filter_string: str = "",
-    ):
-        self.log_to_console = log_to_console
-        self.logging_file = logging_file
-        self.filter_string = filter_string
-
-    def log_info(self, message: str):
-        if self.filter_string and self.filter_string not in message:
-            return
-        if self.log_to_console:
-            print(f"[INFO] {message}")
-
-    def log_debug(self, message: str):
-        if self.filter_string and self.filter_string not in message:
-            return
-        if self.log_to_console:
-            print(f"[DEBUG] {message}")
-
-    def log_error(self, message: str, exception: Exception = None):
-        if self.filter_string and self.filter_string not in message:
-            return
-        if self.log_to_console:
-            print(f"[ERROR] {message}")
-            if exception:
-                import traceback
-
-                traceback.print_exc()
-
-
 # --- Callback Delegates (Consolidated) ---
-# Original content from various CallbackDelegate files
 CostCallback = Callable[["Action", StateDictionary], float]
 ExecutorCallback = Callable[["Agent", "Action"], "ExecutionStatus"]
 PermutationSelectorCallback = Callable[[StateDictionary], List[Any]]
@@ -72,7 +33,6 @@ StateCostDeltaMultiplierCallback = Callable[[Optional["Action"], str], float]
 StateMutatorCallback = Callable[["Action", StateDictionary], None]
 
 # --- Event Delegates (Consolidated) ---
-# Original content from various Event files
 AgentActionSequenceCompletedEvent = Callable[["Agent"], None]
 AgentStepEvent = Callable[["Agent"], None]
 BeginExecuteActionEvent = Callable[["Agent", "Action", Dict[str, Any]], None]
@@ -91,7 +51,6 @@ SensorRunEvent = Callable[["Agent", "Sensor"], None]
 
 
 # --- Priority Queue Implementation (Only FastPriorityQueue and its Node are kept) ---
-# Original content from FastPriorityQueueNode.py
 class FastPriorityQueueNode:
     Priority: float
     QueueIndex: int
@@ -101,7 +60,6 @@ class FastPriorityQueueNode:
         self.QueueIndex = 0
 
 
-# Original content from FastPriorityQueue.py
 T = TypeVar("T", bound=FastPriorityQueueNode)
 
 
@@ -321,7 +279,6 @@ class FastPriorityQueue:
 
 
 # --- Internal GOAP Components ---
-# Original content from DictionaryExtensionMethods.py
 class DictionaryExtensionMethods:
     @staticmethod
     def copy_dict(dictionary: StateDictionary) -> StateDictionary:
@@ -346,7 +303,6 @@ class DictionaryExtensionMethods:
         return dictionary.copy()
 
 
-# Original content from ActionNode.py
 class ActionNode(FastPriorityQueueNode):
     State: StateDictionary
     Parameters: Dict[str, Optional[Any]]
@@ -457,7 +413,6 @@ class ActionNode(FastPriorityQueueNode):
         return True
 
 
-# Original content from ActionGraph.py
 class ActionGraph:
     ActionNodes: List[ActionNode]
 
@@ -485,7 +440,6 @@ class ActionGraph:
                 yield new_node
 
 
-# Original content from Utils.py
 class Utils:
     @staticmethod
     def is_lower_than(a: Any, b: Any) -> bool:
@@ -570,8 +524,8 @@ class Utils:
                 # So Python should too. No explicit `return False` for the `None` case.
             return True
         elif isinstance(goal, ComparativeGoal):
-            if action_node.Action is None:
-                return False
+            # if action_node.Action is None:
+            #     return False
             for key, comparison_value_pair in goal.DesiredState.items():
                 # C# explicitly checks for key in both actionNode.State and current.State
                 if key not in action_node.State:
@@ -615,7 +569,6 @@ class Utils:
         return False
 
 
-# Original content from ActionAStar.py
 class ActionAStar:
     _goal: "BaseGoal"
 
@@ -633,21 +586,55 @@ class ActionAStar:
         self.StepsSoFar: Dict[ActionNode, int] = {}
         self.CameFrom: Dict[ActionNode, ActionNode] = {}
         
-        frontier = FastPriorityQueue(100000)
+        # Add debugging for A* search
+        is_debug_search = False
+        if hasattr(start.State, 'get') and (start.State.get('faction') == 'enemy' or start.State.get('faction') == 'player'):
+            is_debug_search = start.State.get("food_eaten") == 4
+            if is_debug_search:
+                print(f"    A* DEBUG: Starting search for goal {goal.Name}")
+                print(f"      Start state: food_eaten={start.State.get('food_eaten')}, well_rested={start.State.get('well_rested')}, stretched={start.State.get('stretched')}")
+                print(f"      Limits: cost_maximum={cost_maximum}, step_maximum={step_maximum}")
+                print(f"      Available actions: {[node.Action.Name for node in graph.ActionNodes if node.Action]}")
+                print(f"      Actions that could work for this state:")
+                for node in graph.ActionNodes:
+                    if node.Action and node.Action.is_possible(start.State):
+                        print(f"        {node.Action.Name} - preconditions satisfied")
+                    else:
+                        print(f"        {node.Action.Name} - preconditions NOT satisfied")
+        
+        frontier = FastPriorityQueue(100000)  # Increased from 100k to 1M
         frontier.enqueue(start, 0.0)
         self.CameFrom[start] = start
         self.CostSoFar[start] = 0.0
         self.StepsSoFar[start] = 0
+        nodes_explored = 0
+        
         while frontier.count > 0:
             current = frontier.dequeue()
+            nodes_explored += 1
+            
+            if is_debug_search and nodes_explored <= 5:
+                print(f"      A* exploring node {nodes_explored}: action={current.Action.Name if current.Action else 'START'}")
+                print(f"        State: food_eaten={current.State.get('food_eaten')}, well_rested={current.State.get('well_rested')}, stretched={current.State.get('stretched')}")
+                
             if self._meets_goal(current, start):
+                if is_debug_search:
+                    print(f"      A* FOUND GOAL at node {nodes_explored}!")
                 self.FinalPoint = current
                 break
+                
+            neighbor_count = 0
             for next_node in graph.neighbors(current):
+                neighbor_count += 1
+                if is_debug_search and nodes_explored <= 3:
+                    print(f"        Neighbor {neighbor_count}: {next_node.Action.Name if next_node.Action else 'None'}")
+                    
                 action_cost = next_node.cost(current.State)
                 new_cost = self.CostSoFar[current] + action_cost
                 new_step_count = self.StepsSoFar[current] + 1
                 if new_cost > cost_maximum or new_step_count > step_maximum:
+                    if is_debug_search and nodes_explored <= 3:
+                        print(f"          Rejected: cost {new_cost} > {cost_maximum} or steps {new_step_count} > {step_maximum}")
                     continue
                 if (
                     next_node not in self.CostSoFar
@@ -662,6 +649,19 @@ class ActionAStar:
                         frontier.enqueue(next_node, priority)
                     self.CameFrom[next_node] = current
                     Agent.OnEvaluatedActionNode(next_node, self.CameFrom)
+                    if is_debug_search and nodes_explored <= 3:
+                        print(f"          Added to frontier with priority {priority}")
+                        
+            if is_debug_search and nodes_explored <= 5:
+                print(f"        Generated {neighbor_count} neighbors, frontier size: {frontier.count}")
+                
+        if is_debug_search:
+            print(f"      A* search complete: explored {nodes_explored} nodes, final frontier size: {frontier.count}")
+            print(f"      Goal found: {self.FinalPoint is not None}")
+            if self.FinalPoint is None:
+                print(f"      Search ended without finding goal - no more nodes to explore")
+        elif nodes_explored > 100:
+            print(f"    A* WARNING: Explored {nodes_explored} nodes, might be infinite loop!")
 
     def _heuristic(
         self,
@@ -771,7 +771,6 @@ class ActionAStar:
         return Utils.meets_goal(self._goal, action_node, previous_node_in_path)
 
 
-# Original content from Planner.py
 class Planner:
     """
     Planner for an agent.
@@ -779,14 +778,16 @@ class Planner:
 
     @staticmethod
     def plan(agent: "Agent", cost_maximum: float, step_maximum: int) -> None:
-        if "Monster" in agent.Name:
+        if "Monster" in agent.Name or "Player" in agent.Name:
             print(f"PLANNER DEBUG: Starting planning for {agent.Name}")
+            if "Player" in agent.Name:
+                print(f"  Player state: food_eaten={agent.State.get('food_eaten')}, well_rested={agent.State.get('well_rested')}, stretched={agent.State.get('stretched')}")
         Agent.OnPlanningStarted(agent)
         best_plan_utility = 0.0
         best_astar: Optional[ActionAStar] = None
         best_goal: Optional["BaseGoal"] = None
         for goal in agent.Goals:
-            if "Monster" in agent.Name:
+            if "Monster" in agent.Name or "Player" in agent.Name:
                 print(f"  Planning for goal: {goal.Name}")
             Agent.OnPlanningStartedForSingleGoal(agent, goal)
             graph = ActionGraph(agent.Actions, agent.State)
@@ -797,13 +798,17 @@ class Planner:
             cursor = astar_result.FinalPoint
             current_goal_utility = 0.0
             if cursor is not None:
-                if "Monster" in agent.Name:
+                if "Monster" in agent.Name or "Player" in agent.Name:
                     print(f"    A* found solution for {goal.Name}")
             else:
-                if "Monster" in agent.Name:
+                if "Monster" in agent.Name or "Player" in agent.Name:
                     print(f"    A* found NO solution for {goal.Name}")
             if cursor is not None:
                 plan_cost = astar_result.CostSoFar.get(cursor, 0.0)
+
+                if "Monster" in agent.Name or "Player" in agent.Name:
+                    print(f"    UTILITY DEBUG: {goal.Name} - plan_cost={plan_cost}, goal.Weight={goal.Weight}")
+                    print(f"    UTILITY DEBUG: cursor.Action={cursor.Action.Name if cursor.Action else 'None'}")
 
                 # C# logs 0 utility for 0 cost, but for actual comparison, it uses Weight / Cost (Infinity).
                 # Mimic C#'s behavior for the logging event:
@@ -822,22 +827,47 @@ class Planner:
                 elif plan_cost == 0 and goal.Weight <= 0:  # Handle Weight 0 or negative with 0 cost, resulting in NaN or -inf in C#
                     comparison_utility = float('nan') if goal.Weight == 0 else float('-inf')
 
+                if "Monster" in agent.Name or "Player" in agent.Name:
+                    print(f"    UTILITY DEBUG: comparison_utility={comparison_utility}, best_plan_utility={best_plan_utility}")
+                    print(f"    UTILITY DEBUG: cursor.Action is not None: {cursor.Action is not None}")
+                    print(f"    UTILITY DEBUG: comparison_utility > best_plan_utility: {comparison_utility > best_plan_utility}")
+
                 if cursor.Action is not None and comparison_utility > best_plan_utility:
+                    if "Monster" in agent.Name or "Player" in agent.Name:
+                        print(f"    UTILITY DEBUG: NEW BEST PLAN SELECTED for {goal.Name}")
                     best_plan_utility = comparison_utility
                     best_astar = astar_result
                     best_goal = goal
+                else:
+                    if "Monster" in agent.Name or "Player" in agent.Name:
+                        print(f"    UTILITY DEBUG: Plan REJECTED for {goal.Name}")
+                        if cursor.Action is None:
+                            print(f"      Reason: cursor.Action is None")
+                        elif not (comparison_utility > best_plan_utility):
+                            print(f"      Reason: utility {comparison_utility} <= best {best_plan_utility}")
             else:
                 Agent.OnPlanningFinishedForSingleGoal(agent, goal, 0.0)
+        if "Monster" in agent.Name:
+            print(f"  FINAL PLAN SELECTION: best_plan_utility={best_plan_utility}")
+            print(f"    best_plan_utility > 0: {best_plan_utility > 0}")
+            print(f"    best_astar is not None: {best_astar is not None}")
+            print(f"    best_goal is not None: {best_goal is not None}")
+            print(f"    best_astar.FinalPoint is not None: {best_astar.FinalPoint is not None if best_astar else 'N/A'}")
+            
         if (
             best_plan_utility > 0
             and best_astar is not None
             and best_goal is not None
             and best_astar.FinalPoint is not None
         ):
+            if "Monster" in agent.Name:
+                print(f"  PLAN ACCEPTED: Updating action list for {best_goal.Name}")
             Planner._update_agent_action_list(best_astar.FinalPoint, best_astar, agent)
             agent.IsBusy = True
             Agent.OnPlanningFinished(agent, best_goal, best_plan_utility)
         else:
+            if "Monster" in agent.Name:
+                print(f"  PLAN REJECTED: No valid plan found")
             Agent.OnPlanningFinished(agent, None, 0.0)
         agent.IsPlanning = False
 
@@ -859,7 +889,6 @@ class Planner:
 
 
 # --- GOAP Core Components ---
-# Original content from BaseGoal.py
 class BaseGoal:
     Name: str
     Weight: float
@@ -869,7 +898,6 @@ class BaseGoal:
         self.Weight = weight
 
 
-# Original content from ComparisonOperator.py
 class ComparisonOperator(Enum):
     Undefined = 0
     Equals = 1
@@ -879,7 +907,6 @@ class ComparisonOperator(Enum):
     GreaterThanOrEquals = 5
 
 
-# Original content from ComparisonValuePair.py
 class ComparisonValuePair:
     Value: Optional[Any] = None
     Operator: ComparisonOperator = ComparisonOperator.Undefined
@@ -893,7 +920,6 @@ class ComparisonValuePair:
         self.Operator = operator
 
 
-# Original content from ComparativeGoal.py
 class ComparativeGoal(BaseGoal):
     DesiredState: Dict[str, ComparisonValuePair]
 
@@ -907,7 +933,6 @@ class ComparativeGoal(BaseGoal):
         self.DesiredState = desired_state if desired_state is not None else {}
 
 
-# Original content from ExecutionStatus.py
 class ExecutionStatus(Enum):
     NotYetExecuted = 1
     Executing = 2
@@ -916,7 +941,6 @@ class ExecutionStatus(Enum):
     NotPossible = 5
 
 
-# Original content from ExtremeGoal.py
 class ExtremeGoal(BaseGoal):
     DesiredState: Dict[str, bool]
 
@@ -930,7 +954,6 @@ class ExtremeGoal(BaseGoal):
         self.DesiredState = desired_state if desired_state is not None else {}
 
 
-# Original content from Goal.py
 class Goal(BaseGoal):
     DesiredState: StateDictionary
 
@@ -944,7 +967,6 @@ class Goal(BaseGoal):
         self.DesiredState = desired_state if desired_state is not None else {}
 
 
-# Original content from PermutationSelectorGenerators.py
 class PermutationSelectorGenerators:
     @staticmethod
     def select_from_collection(values: Iterable[T]) -> PermutationSelectorCallback:
@@ -983,7 +1005,6 @@ class PermutationSelectorGenerators:
         return selector
 
 
-# Original content from Sensor.py
 class Sensor:
     Name: str
     _run_callback: SensorRunCallback
@@ -1014,14 +1035,12 @@ class Sensor:
         self._run_callback(agent)
 
 
-# Original content from StepMode.py
 class StepMode(Enum):
     Default = 1
     OneAction = 2
     AllActions = 3
 
 
-# Original content from Action.py
 class Action:
     Name: str
     _cost_base: float
@@ -1249,7 +1268,7 @@ class Action:
         self, state: StateDictionary
     ) -> List[Dict[str, Optional[Any]]]:
         if not self._permutation_selectors:
-            return []  # Match C# behavior: no permutations if no selectors
+            return [{}]  # Actions without selectors get one empty permutation
 
         combined_outputs: List[Dict[str, Optional[Any]]] = []
         outputs: Dict[str, List[Any]] = {}
@@ -1330,7 +1349,6 @@ class Action:
         return self.Name == other.Name
 
 
-# Original content from Agent.py
 class Agent:
     Name: str
     CurrentActionSequences: List[List[Action]]
@@ -1871,6 +1889,7 @@ class CommonRpgAgentHandlers:
                     else f"{agent_instance.Name} ate food at {food_to_eat}"
                 )
                 food_positions_in_state.remove(food_to_eat)
+                agent_instance.State["food_eaten"] = food_eaten + 1
                 return ExecutionStatus.Succeeded
         return ExecutionStatus.Failed
 
@@ -1940,11 +1959,11 @@ class PlayerFactory:
             )
         else:
             food_goal = ComparativeGoal(
-                name="Get at least 5 food",
+                name="Get exactly 5 food",
                 weight=1.0,
                 desired_state={
                     "food_eaten": ComparisonValuePair(
-                        operator=ComparisonOperator.GreaterThanOrEquals, value=3
+                        operator=ComparisonOperator.Equals, value=3
                     )
                 },
             )
@@ -2012,11 +2031,19 @@ class PlayerFactory:
         rest_action = Action(
             name="Rest",
             executor=rest_executor,
-            preconditions={
-                "canSeeEnemies": False,
-                "canSeeFood": False,
-            },
-            arithmetic_postconditions={"rest_count": 1},
+            preconditions={"well_rested": False},
+            postconditions={"well_rested": True, "stretched": False},
+        )
+        
+        def walk_around_executor(agent_instance, action_instance):
+            print(f"{agent_instance.Name} is walking around")
+            return ExecutionStatus.Succeeded
+            
+        walk_around_action = Action(
+            name="Walk Around",
+            executor=walk_around_executor,
+            preconditions={"stretched": False},
+            postconditions={"stretched": True, "well_rested": False},
         )
         agent = Agent(
             name=name,
@@ -2031,15 +2058,19 @@ class PlayerFactory:
                 "faction": "player",
                 "agents": agents,
                 "foodPositions": food_positions,
-                "rest_count": 0,
+                "well_rested": False,
+                "stretched": False,
                 "sight_range": 10.0,
                 "food_sight_range": 20.0,
             },
             goals=[
                 food_goal,
                 remove_enemies_goal,
-                ExtremeGoal(
-                    name="Idle", weight=0.1, desired_state={"rest_count": True}
+                Goal(
+                    name="Get well rested", weight=0.11, desired_state={"well_rested": True}
+                ),
+                Goal(
+                    name="Get stretched", weight=0.1, desired_state={"stretched": True}
                 ),
             ],
             sensors=[
@@ -2055,6 +2086,7 @@ class PlayerFactory:
                 go_to_food_action,
                 eat_food_action,
                 rest_action,
+                walk_around_action,
             ],
         )
         return agent
@@ -2102,19 +2134,20 @@ class RpgMonsterFactory:
             preconditions={"nearFood": True, "canSeeEnemies": False},
             postconditions={"eatingFood": True},
         )
-        agent.State["canSeeFood"] = False
-        agent.State["nearFood"] = False
-        agent.State["eatingFood"] = False
-        agent.State["foodPositions"] = food_positions
-        agent.State["hp"] = 2
-        agent.State["sight_range"] = 5.0
-        agent.State["food_sight_range"] = 5.0
+        # Initialize monster state
+        agent.State.update({
+            "canSeeFood": False,
+            "nearFood": False,
+            "eatingFood": False,
+            "foodPositions": food_positions,
+            "hp": 2,
+            "sight_range": 5.0,
+            "food_sight_range": 5.0
+        })
+
         agent.Goals.append(eat_food_goal)
-        agent.Sensors.append(see_food_sensor)
-        agent.Sensors.append(food_proximity_sensor)
-        agent.Actions.append(go_to_food_action)
-        agent.Actions.append(look_for_food_action)
-        agent.Actions.append(eat_action)
+        agent.Sensors.extend([see_food_sensor, food_proximity_sensor])
+        agent.Actions.extend([go_to_food_action, look_for_food_action, eat_action])
         return agent
 
 
@@ -2134,9 +2167,7 @@ BLUE = (0, 0, 255)
 class RpgExampleComparativePygame:
     @staticmethod
     def run() -> None:
-        _ = DefaultLogger(
-            log_to_console=True, logging_file="rpg-example.log", filter_string="Monster"
-        )
+
 
         pygame.init()
         screen = pygame.display.set_mode((WIDTH, HEIGHT))

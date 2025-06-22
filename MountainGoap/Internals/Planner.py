@@ -94,7 +94,8 @@ class Planner:
         """
         Updates the agent action list with the new plan.
         """
-        # from ..Agent import Agent # Already imported at module level for type hints.
+        # Import Agent lazily to avoid circular dependency at module import time
+        from ..Agent import Agent  # noqa: WPS433
 
         cursor: Optional[ActionNode] = start_node
         action_list: List[Action] = []

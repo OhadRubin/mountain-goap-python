@@ -164,9 +164,14 @@ class Agent:
 
         if not self.IsBusy:
             Planner.plan(self, self.CostMaximum, self.StepMaximum)
-        
+
         if mode == StepMode.OneAction:
             self._execute()
+            # In OneAction mode we want the agent to yield control back to the caller
+            # after executing a single action, even if there are more actions left.
+            # The remaining plan is kept for the next step, so mark the agent as
+            # not busy to allow planning or execution in the following frame.
+            self.IsBusy = False
         elif mode == StepMode.AllActions:
             while self.IsBusy: # Loop until plan is fully executed or becomes impossible
                 self._execute()
@@ -228,6 +233,8 @@ class Agent:
                     execution_status = action_to_execute.execute(self) # Pass self (agent) to action's execute method
                     if execution_status != ExecutionStatus.Executing:
                         sequence.pop(0) # Remove the action if it's done (succeeded, failed, not possible)
+                    if len(sequence) == 0:
+                        cullable_sequences.append(sequence)
                 else:
                     cullable_sequences.append(sequence) # Mark sequence as empty for removal
 

@@ -14,7 +14,7 @@ from MountainGoap.ExecutionStatus import ExecutionStatus
 from MountainGoap.StepMode import StepMode
 from typing import Dict, Any, Optional
 
-class AgentTests:
+class TestAgent:
     @pytest.fixture(autouse=True) # Ensure events are cleared for each test
     def _fixture_setup(self, setup_teardown_events):
         pass

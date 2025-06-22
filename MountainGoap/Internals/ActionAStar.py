@@ -187,16 +187,15 @@ class ActionAStar:
                 try:
                     current_val_f = float(current_val)
                     desired_val_f = float(desired_val) if desired_val is not None else float('nan') # Handle None case for desired_val
+                    prev_val_f = float(previous_node_in_path.State[key])
                 except (ValueError, TypeError):
                     current_val_f = float('nan') # Mark as non-numeric if conversion fails
+                    prev_val_f = float('nan')
 
                 # This valueDiff2 in C# is Math.Abs(Convert.ToSingle(actionNode.State[kvp.Key]) - Convert.ToSingle(current.State[kvp.Key]))
                 # It's the absolute change from previous state. This seems more like a penalty for *change* rather than *distance to goal*.
-                # Let's re-interpret this as a "cost" of not meeting the goal from the new state.
-                # If the goal is NOT met, then add a penalty.
-                # The C# heuristic adds `valueDiff2 * valueDiffMultiplier` when the goal is NOT met.
-                # This suggests the heuristic is a measure of "how much work is still needed, or how badly this step moved away".
-                # For `Equals`, if not equal, it penalizes.
+                # Calculate the absolute difference from the previous step so we can penalize moving away from the goal.
+                value_diff_from_previous_step = abs(current_val_f - prev_val_f)
                 if operator == ComparisonOperator.Undefined:
                     cost += inf
                 elif operator == ComparisonOperator.Equals:

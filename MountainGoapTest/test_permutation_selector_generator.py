@@ -14,7 +14,7 @@ from MountainGoap.ExecutionStatus import ExecutionStatus
 from MountainGoap.PermutationSelectorGenerators import PermutationSelectorGenerators
 from typing import Dict, Any, List, Optional
 
-class PermutationSelectorGeneratorTests:
+class TestPermutationSelectorGenerator:
     @pytest.fixture(autouse=True) # Ensure events are cleared for each test
     def _fixture_setup(self, setup_teardown_events):
         pass

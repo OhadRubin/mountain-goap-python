@@ -2,13 +2,15 @@
 # // Copyright (c) Chris Muller. All rights reserved.
 # // </copyright>
 
-from typing import List, Optional, Dict
+from typing import List, Optional, Dict, TYPE_CHECKING
 from .ActionAStar import ActionAStar
 from .ActionGraph import ActionGraph
 from .ActionNode import ActionNode
-from ..Agent import Agent # Circular import, handled by local import/type checking
 from ..Action import Action
 from ..BaseGoal import BaseGoal
+
+if TYPE_CHECKING:
+    from ..Agent import Agent
 
 class Planner:
     """
@@ -23,6 +25,8 @@ class Planner:
         # Ensure agent is imported to access its static event methods
         # from ..Agent import Agent # Already imported at module level for type hints.
 
+        # Import Agent locally to avoid circular import
+        from ..Agent import Agent
         Agent.OnPlanningStarted(agent) # Trigger static event
 
         best_plan_utility = 0.0

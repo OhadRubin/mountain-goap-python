@@ -592,7 +592,7 @@ class ActionAStar:
             is_debug_search = start.State.get("food_eaten") == 4
             if is_debug_search:
                 print(f"    A* DEBUG: Starting search for goal {goal.Name}")
-                print(f"      Start state: food_eaten={start.State.get('food_eaten')}, well_rested={start.State.get('well_rested')}, stretched={start.State.get('stretched')}")
+                print(f"      Start state: food_eaten={start.State.get('food_eaten')}, canSeeFood={start.State.get('canSeeFood')}, nearFood={start.State.get('nearFood')}, canSeeEnemies={start.State.get('canSeeEnemies')}")
                 print(f"      Limits: cost_maximum={cost_maximum}, step_maximum={step_maximum}")
                 print(f"      Available actions: {[node.Action.Name for node in graph.ActionNodes if node.Action]}")
                 print(f"      Actions that could work for this state:")
@@ -1889,7 +1889,7 @@ class CommonRpgAgentHandlers:
                     else f"{agent_instance.Name} ate food at {food_to_eat}"
                 )
                 food_positions_in_state.remove(food_to_eat)
-                agent_instance.State["food_eaten"] = food_eaten + 1
+                # agent_instance.State["food_eaten"] = food_eaten + 1
                 return ExecutionStatus.Succeeded
         return ExecutionStatus.Failed
 
@@ -1959,7 +1959,7 @@ class PlayerFactory:
             )
         else:
             food_goal = ComparativeGoal(
-                name="Get exactly 5 food",
+                name="Get exactly 3 food",
                 weight=1.0,
                 desired_state={
                     "food_eaten": ComparisonValuePair(

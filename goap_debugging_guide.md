@@ -241,6 +241,28 @@ If the system is slow:
 3. **Sensor overhead**: Complex sensor calculations running too frequently
 4. **Memory leaks**: ActionNode objects not being properly garbage collected
 
+## Investigation Results Log
+
+### Fix #8: Action.__eq__ and __hash__ Overrides ❌ **TESTED - PARTIAL EFFECT**
+
+**Theory:** Python Action class uses name-based equality/hashing while C# uses reference equality, potentially breaking A* search.
+
+**Test Method:** Removed Action.__eq__ and __hash__ methods to match C# reference equality behavior.
+
+**Results:** 
+- A* search behavior changed significantly - now explores many more nodes (queue overflow from 100k to 1M needed)
+- Monster 1: Changed from "A* found solution" to "A* found NO solution" 
+- Monster 2: Still finds zero-action plans for already-satisfied goals
+- **Core Issue Persists:** Monsters still don't execute any actions (`sequences count: 0`)
+
+**Conclusion:** Action equality was affecting A* search efficiency but is NOT the root cause of monsters not acting. The search space exploration improved but planning still fails.
+
+**Next Investigation:** Need to focus on why A* finds "NO solution" for valid action chains (e.g., Monster 1 with `canSeeEnemies=True, nearEnemy=False` should be able to execute "Go To Enemy" action).
+
+---
+
 ## Conclusion
 
 GOAP debugging requires understanding the complete data flow from sensors through planning to execution. The key is isolating which component is failing and using targeted debugging at the appropriate insertion points. Always start with high-level symptoms and work down to specific component failures.
+
+**Critical Lesson Learned:** Even when a fix appears to address a major architectural difference (like Action equality semantics), the core planning logic may still have deeper issues. Always verify that fixes actually resolve the end-to-end behavior, not just intermediate symptoms.

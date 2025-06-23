@@ -1,8 +1,8 @@
 from typing import Any, Dict, Iterable, Optional, List
-from .types import StateDictionary
-from .utils import PriorityQueueNode, PriorityQueue, DictionaryExtensionMethods, Utils
-from .actions import Action
-from .goals import BaseGoal, Goal, ExtremeGoal, ComparativeGoal, ComparisonOperator
+from goap.types import StateDictionary
+from goap.utils import PriorityQueueNode, PriorityQueue, DictionaryExtensionMethods, Utils
+from goap.actions import Action
+from goap.goals import BaseGoal, Goal, ExtremeGoal, ComparativeGoal, ComparisonOperator
 
 class ActionNode(PriorityQueueNode):
     State: StateDictionary
@@ -194,7 +194,8 @@ class ActionAStar:
                     else:
                         frontier.enqueue(next_node, priority)
                     self.CameFrom[next_node] = current
-                    (__import__(".agent", fromlist=["Agent"]).Agent.OnEvaluatedActionNode)(next_node, self.CameFrom)
+                    import goap.agent
+                    goap.agent.Agent.OnEvaluatedActionNode(next_node, self.CameFrom)
 
     def _heuristic(
         self,
@@ -307,13 +308,13 @@ class Planner:
 
     @staticmethod
     def plan(agent: "Agent", cost_maximum: float, step_maximum: int) -> None:
-        from .agent import Agent
-        Agent.OnPlanningStarted(agent)
+        import goap.agent
+        goap.agent.Agent.OnPlanningStarted(agent)
         best_plan_utility = 0.0
         best_astar: Optional[ActionAStar] = None
         best_goal: Optional["BaseGoal"] = None
         for goal in agent.Goals:
-            Agent.OnPlanningStartedForSingleGoal(agent, goal)
+            goap.agent.Agent.OnPlanningStartedForSingleGoal(agent, goal)
             graph = ActionGraph(agent.Actions, agent.State)
             start_node = ActionNode(None, agent.State, {})
             astar_result = ActionAStar(
@@ -331,7 +332,7 @@ class Planner:
                     reported_utility = 0.0  # C# logs 0.0 if cost is 0
                 else:
                     reported_utility = goal.Weight / plan_cost
-                Agent.OnPlanningFinishedForSingleGoal(agent, goal, reported_utility)
+                goap.agent.Agent.OnPlanningFinishedForSingleGoal(agent, goal, reported_utility)
 
                 # For the actual best_plan_utility comparison, C# uses the result of the division,
                 # which can be float.PositiveInfinity if plan_cost is 0 and goal.Weight > 0.
@@ -350,7 +351,7 @@ class Planner:
                     best_astar = astar_result
                     best_goal = goal
             else:
-                Agent.OnPlanningFinishedForSingleGoal(agent, goal, 0.0)
+                goap.agent.Agent.OnPlanningFinishedForSingleGoal(agent, goal, 0.0)
 
         if (
             best_plan_utility > 0
@@ -360,9 +361,9 @@ class Planner:
         ):
             Planner._update_agent_action_list(best_astar.FinalPoint, best_astar, agent)
             agent.IsBusy = True
-            Agent.OnPlanningFinished(agent, best_goal, best_plan_utility)
+            goap.agent.Agent.OnPlanningFinished(agent, best_goal, best_plan_utility)
         else:
-            Agent.OnPlanningFinished(agent, None, 0.0)
+            goap.agent.Agent.OnPlanningFinished(agent, None, 0.0)
         agent.IsPlanning = False
 
     @staticmethod
@@ -370,7 +371,7 @@ class Planner:
         start_node: ActionNode, astar: ActionAStar, agent: "Agent"
     ) -> None:
         cursor: Optional[ActionNode] = start_node
-        from .agent import Agent
+        import goap.agent
         action_list: List["Action"] = []
         while (
             cursor is not None
@@ -384,6 +385,6 @@ class Planner:
             cursor = prev_cursor
         action_list.reverse()
         agent.CurrentActionSequences.append(action_list)
-        Agent.OnPlanUpdated(agent, action_list)
+        goap.agent.Agent.OnPlanUpdated(agent, action_list)
 
 

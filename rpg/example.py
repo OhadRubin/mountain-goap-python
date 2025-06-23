@@ -2,10 +2,15 @@ import pygame
 import random
 from typing import List
 
-from goap import Agent, StepMode
+import goap.agent
+import goap.actions
 
-from .utils import Vector2, MaxX, MaxY
-from .factories import PlayerFactory, RpgMonsterFactory
+from rpg.utils import Vector2, MaxX, MaxY
+from rpg.factories import PlayerFactory, RpgMonsterFactory
+
+# Aliases for convenience
+Agent = goap.agent.Agent
+StepMode = goap.actions.StepMode
 CELL_SIZE = 30
 WIDTH = 20 * CELL_SIZE
 HEIGHT = 20 * CELL_SIZE
@@ -135,3 +140,5 @@ class RpgExampleComparativePygame:
             print(f"Agent {agent_to_remove.Name} has died.")
 
 
+if __name__ == "__main__":
+    RpgExampleComparativePygame.run(True)

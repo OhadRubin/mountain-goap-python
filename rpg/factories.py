@@ -1,9 +1,24 @@
 import random
 from typing import List, Dict, Any, Optional
 
-from goap import Action, Agent, Sensor, StepMode, Goal, ComparativeGoal, ExtremeGoal, ComparisonOperator, ComparisonValuePair, ExecutionStatus
+import goap.actions
+import goap.agent
+import goap.sensors
+import goap.goals
 from goap.types import StateDictionary
-from .utils import Vector2, RpgUtils, MaxX, MaxY
+from rpg.utils import Vector2, RpgUtils, MaxX, MaxY
+
+# Aliases for convenience
+Action = goap.actions.Action
+Agent = goap.agent.Agent
+Sensor = goap.sensors.Sensor
+StepMode = goap.actions.StepMode
+Goal = goap.goals.Goal
+ComparativeGoal = goap.goals.ComparativeGoal
+ExtremeGoal = goap.goals.ExtremeGoal
+ComparisonOperator = goap.goals.ComparisonOperator
+ComparisonValuePair = goap.goals.ComparisonValuePair
+ExecutionStatus = goap.actions.ExecutionStatus
 
 class CommonRpgAgentHandlers:
     _rng = random.Random()

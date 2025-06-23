@@ -1,8 +1,13 @@
 import math
 from typing import List, Any, Optional
 
-from goap import Action, Agent
+import goap.actions
+import goap.agent
 from goap.types import StateDictionary
+
+# Aliases for convenience
+Action = goap.actions.Action
+Agent = goap.agent.Agent
 
 MaxX: int = 20
 MaxY: int = 20

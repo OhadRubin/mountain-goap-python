@@ -1,7 +1,7 @@
 # JavaScript/Node.js GOAP RPG Port Plan
 
 ## Overview
-Port the Python GOAP RPG example to JavaScript/Node.js, maintaining the same architecture and functionality.
+Port the Python GOAP RPG example to JavaScriptjavascript-port-plan.md/Node.js, maintaining the same architecture and functionality.
 
 ## Project Structure
 ```

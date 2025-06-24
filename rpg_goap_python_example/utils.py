@@ -1,13 +1,13 @@
 import math
 from typing import List, Any, Optional
 
-import goap.actions
-import goap.agent
-from goap.types import StateDictionary
+import goap_python.actions
+import goap_python.agent
+from goap_python.types import StateDictionary
 
 # Aliases for convenience
-Action = goap.actions.Action
-Agent = goap.agent.Agent
+Action = goap_python.actions.Action
+Agent = goap_python.agent.Agent
 
 MaxX: int = 20
 MaxY: int = 20
@@ -146,4 +146,3 @@ class RpgUtils:
         return math.sqrt(
             math.pow(abs(pos2.X - pos1.X), 2) + math.pow(abs(pos2.Y - pos1.Y), 2)
         )
-

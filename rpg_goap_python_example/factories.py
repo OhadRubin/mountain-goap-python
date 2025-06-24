@@ -1,24 +1,25 @@
 import random
 from typing import List, Dict, Any, Optional
 
-import goap.actions
-import goap.agent
-import goap.sensors
-import goap.goals
-from goap.types import StateDictionary
-from rpg.utils import Vector2, RpgUtils, MaxX, MaxY
+import goap_python.actions
+import goap_python.agent
+import goap_python.sensors
+import goap_python.goals
+from goap_python.types import StateDictionary
+from rpg_goap_python_example.utils import Vector2, RpgUtils, MaxX, MaxY
 
 # Aliases for convenience
-Action = goap.actions.Action
-Agent = goap.agent.Agent
-Sensor = goap.sensors.Sensor
-StepMode = goap.actions.StepMode
-Goal = goap.goals.Goal
-ComparativeGoal = goap.goals.ComparativeGoal
-ExtremeGoal = goap.goals.ExtremeGoal
-ComparisonOperator = goap.goals.ComparisonOperator
-ComparisonValuePair = goap.goals.ComparisonValuePair
-ExecutionStatus = goap.actions.ExecutionStatus
+Action = goap_python.actions.Action
+Agent = goap_python.agent.Agent
+Sensor = goap_python.sensors.Sensor
+StepMode = goap_python.actions.StepMode
+Goal = goap_python.goals.Goal
+ComparativeGoal = goap_python.goals.ComparativeGoal
+ExtremeGoal = goap_python.goals.ExtremeGoal
+ComparisonOperator = goap_python.goals.ComparisonOperator
+ComparisonValuePair = goap_python.goals.ComparisonValuePair
+ExecutionStatus = goap_python.actions.ExecutionStatus
+
 
 class CommonRpgAgentHandlers:
     _rng = random.Random()
@@ -472,6 +473,3 @@ class RpgMonsterFactory:
         agent.Sensors.extend([see_food_sensor, food_proximity_sensor])
         agent.Actions.extend([go_to_food_action, look_for_food_action, eat_action])
         return agent
-
-
-

@@ -15,6 +15,7 @@ from goap_python.goals import (
     ComparisonOperator,
 )
 
+
 class ActionNode(PriorityQueueNode):
     State: StateDictionary
     Parameters: Dict[str, Optional[Any]]

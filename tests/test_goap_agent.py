@@ -1,4 +1,4 @@
-from goap.agent import Agent
+from goap_python.agent import Agent
 
 
 def test_agent_defaults():

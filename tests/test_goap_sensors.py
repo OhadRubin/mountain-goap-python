@@ -1,4 +1,4 @@
-from goap.sensors import Sensor
+from goap_python.sensors import Sensor
 
 
 def dummy(agent):

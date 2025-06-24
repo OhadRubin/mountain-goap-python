@@ -1,4 +1,4 @@
-from goap.utils import PriorityQueue, PriorityQueueNode
+from goap_python.utils import PriorityQueue, PriorityQueueNode
 
 class Node(PriorityQueueNode):
     pass

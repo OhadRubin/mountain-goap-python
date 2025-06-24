@@ -5,7 +5,8 @@ def test_player_factory_returns_agent():
         factories = importlib.import_module('rpg.factories')
     except ModuleNotFoundError:
         return
-    from goap.agent import Agent
+    from goap_python.agent import Agent
+
     PlayerFactory = factories.PlayerFactory
     agents = []
     player = PlayerFactory.create(agents, [])

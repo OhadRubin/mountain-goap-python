@@ -2,15 +2,15 @@ import pygame
 import random
 from typing import List
 
-import goap.agent
-import goap.actions
+import goap_python.agent
+import goap_python.actions
 
-from rpg.utils import Vector2, MaxX, MaxY
-from rpg.factories import PlayerFactory, RpgMonsterFactory
+from rpg_goap_python_example.utils import Vector2, MaxX, MaxY
+from rpg_goap_python_example.factories import PlayerFactory, RpgMonsterFactory
 
 # Aliases for convenience
-Agent = goap.agent.Agent
-StepMode = goap.actions.StepMode
+Agent = goap_python.agent.Agent
+StepMode = goap_python.actions.StepMode
 CELL_SIZE = 30
 WIDTH = 20 * CELL_SIZE
 HEIGHT = 20 * CELL_SIZE

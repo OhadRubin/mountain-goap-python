@@ -1,5 +1,5 @@
-from goap.actions import Action
-from goap.planning import ActionNode
+from goap_python.actions import Action
+from goap_python.planning import ActionNode
 
 
 def test_action_node_equality():

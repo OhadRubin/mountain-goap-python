@@ -1,4 +1,4 @@
-from goap.goals import ComparisonValuePair, ComparisonOperator, Goal
+from goap_python.goals import ComparisonValuePair, ComparisonOperator, Goal
 
 
 def test_goal_creation():

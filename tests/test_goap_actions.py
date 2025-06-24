@@ -1,4 +1,4 @@
-from goap.actions import Action
+from goap_python.actions import Action
 
 
 def test_action_clone():

@@ -1,4 +1,4 @@
-# run this with `timeout 10 python pygoap_rpg.py` otherwise you will hang.
+# run this with `timeout 10 python pygoap_rpg.py` otherwise you will hang. add `export SDL_VIDEODRIVER=dummy` it needed.
 import uuid
 import math
 import random

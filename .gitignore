@@ -3,3 +3,4 @@ __pycache__/
 pytest_cache/
 .history
 rpg-example.log
+node_modules/

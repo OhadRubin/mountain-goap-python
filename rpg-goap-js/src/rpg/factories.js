@@ -1,7 +1,6 @@
 import {
   Action,
   StepMode,
-  ExecutionStatus,
 } from '../goap/actions.js';
 import {
   Goal,
@@ -9,6 +8,7 @@ import {
   ExtremeGoal,
   ComparisonOperator,
   ComparisonValuePair,
+  ExecutionStatus,
 } from '../goap/goals.js';
 import { Sensor } from '../goap/sensors.js';
 import { Agent } from '../goap/agent.js';

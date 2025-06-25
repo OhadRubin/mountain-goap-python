@@ -1,0 +1,12 @@
+{
+  "name": "rpg-goap-js",
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "test": "node --test",
+    "start": "node ./src/example.js"
+  },
+  "dependencies": {
+    "canvas": "^2.11.2"
+  }
+}

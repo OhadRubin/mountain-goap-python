@@ -63,3 +63,19 @@ The RPG example demonstrates:
 
 The player agent will automatically fight monsters and collect food based on its programmed goals and the current game state.
 
+## JavaScript Port
+
+This repository also contains a partial JavaScript port of the GOAP system under
+`rpg-goap-js/`.  The Node.js version mirrors the Python architecture and can be
+run using:
+
+```bash
+npm start --prefix rpg-goap-js
+```
+
+Tests for the JavaScript code can be executed with:
+
+```bash
+npm test --silent --prefix rpg-goap-js
+```
+

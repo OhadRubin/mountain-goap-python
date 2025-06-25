@@ -2328,34 +2328,40 @@ class RpgExampleComparativePygame {
 
         let running = true;
         let turn = 0;
-        
-        const gameLoop = () => {
-            if (!running || turn >= 600) {
-                console.log("Game finished.");
-                return;
-            }
+        let last_update = pygame.time.get_ticks();
 
-            turn++;
-            console.log(`--- Turn ${turn} ---`);
+        while (running && turn < 600) {
+            const current_time = pygame.time.get_ticks();
+            if (current_time - last_update >= 200) {
+                turn++;
+                console.log(`--- Turn ${turn} ---`);
 
-            for (const agent of [...agents]) { // Iterate on a copy
-                if (agents.includes(agent)) {
-                    agent.step(StepMode.OneAction);
-                    RpgExampleComparativePygame._process_deaths(agents);
+                // Iterate on a copy of the agents list to safely handle agents being removed (defeated)
+                for (const agent of [...agents]) {
+                    if (agents.includes(agent)) { // Check if agent wasn't removed by a previous death this turn
+                        agent.step(StepMode.OneAction);
+                        // Process deaths immediately after each action to prevent dead agents from acting
+                        RpgExampleComparativePygame._process_deaths(agents);
+                    }
+                }
+                last_update = current_time;
+
+                if (!agents.includes(player)) {
+                    console.log("Player defeated! Game Over.");
+                    break;
                 }
             }
 
-            if (!agents.includes(player)) {
-                console.log("Player defeated! Game Over.");
-                running = false;
-            }
-            
             RpgExampleComparativePygame._render_grid(screen, agents, food_positions);
             
-            setTimeout(gameLoop, 200); // Next turn after 200ms
-        };
-        
-        gameLoop(); // Start the loop
+            // Small delay to prevent busy waiting
+            // In a real implementation, this would be handled by the game engine
+            // For this demo, we'll add a small synchronous delay
+            const start = Date.now();
+            while (Date.now() - start < 16) {} // ~60 FPS equivalent
+        }
+
+        console.log("Game finished.");
     }
 
     static _render_grid(screen, agents, food_positions) {

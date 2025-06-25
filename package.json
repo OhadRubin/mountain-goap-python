@@ -1,0 +1,13 @@
+{
+  "name": "rpg-goap-canvas",
+  "version": "1.0.0",
+  "description": "RPG GOAP example with HTML5 Canvas rendering",
+  "scripts": {
+    "serve": "python3 -m http.server 8000",
+    "start": "python3 -m http.server 8000"
+  },
+  "dependencies": {
+    "@datastructures-js/priority-queue": "^6.3.3",
+    "uuid": "^11.1.0"
+  }
+}

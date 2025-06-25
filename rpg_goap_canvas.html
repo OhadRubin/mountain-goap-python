@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RPG GOAP Canvas Example</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: 'Courier New', monospace;
+            background-color: #2d2d2d;
+            color: #ffffff;
+        }
+        .container {
+            display: flex;
+            gap: 20px;
+        }
+        .game-area {
+            flex: 1;
+        }
+        canvas {
+            border: 2px solid #666;
+            background-color: #1a1a1a;
+        }
+        .info-panel {
+            width: 300px;
+            background-color: #3d3d3d;
+            padding: 15px;
+            border-radius: 5px;
+            height: fit-content;
+        }
+        .legend {
+            margin-bottom: 20px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin: 5px 0;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            margin-right: 10px;
+            border: 1px solid #666;
+        }
+        .stats {
+            font-size: 14px;
+            line-height: 1.5;
+        }
+        .turn-info {
+            color: #ffff88;
+            font-weight: bold;
+        }
+        #log {
+            background-color: #1a1a1a;
+            padding: 10px;
+            height: 200px;
+            overflow-y: auto;
+            border: 1px solid #666;
+            font-size: 12px;
+            margin-top: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="game-area">
+            <h1>RPG GOAP Canvas Example</h1>
+            <canvas id="gameCanvas" width="600" height="600"></canvas>
+        </div>
+        <div class="info-panel">
+            <div class="legend">
+                <h3>Legend:</h3>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #0088ff;"></div>
+                    <span>Player</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #ff4444;"></div>
+                    <span>Monster</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #44ff44;"></div>
+                    <span>Food</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-color" style="background-color: #444444;"></div>
+                    <span>Empty</span>
+                </div>
+            </div>
+            <div class="stats" id="gameStats">
+                <div class="turn-info" id="turnInfo">Turn: 0</div>
+                <div id="playerStats">Player: HP=80, Food=0</div>
+                <div id="gameInfo">Monsters: 10, Food: 20</div>
+            </div>
+            <div id="log"></div>
+        </div>
+    </div>
+
+    <!-- Include the updated GOAP JavaScript -->
+    <script src="jsgoap_rpg_canvas.js"></script>
+    
+    <script>
+        // Start the game when the page loads
+        window.addEventListener('load', () => {
+            console.log('Starting RPG GOAP Canvas Demo...');
+            RpgExampleComparativePygame.run(true);
+        });
+    </script>
+</body>
+</html>

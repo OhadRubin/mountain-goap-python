@@ -1449,12 +1449,16 @@ class ActionNode extends PriorityQueueNode {
     getHash() {
         if (this._hash !== null) return this._hash;
         
-        const actionHash = this.Action ? this.Action.getHash() : 'null_action';
+        const actionHash = this.Action ? this.Action.Name : 'null_action';
         
         const hashableItems = [];
         const sortedKeys = Object.keys(this.State).sort();
 
         for (const key of sortedKeys) {
+            // Skip circular references like agents array
+            if (key === 'agents' || key === 'foodPositions') {
+                continue;
+            }
             const value = this.State[key];
             const hashableValue = this._makeValueHashable(value);
             if (hashableValue !== null) {
@@ -1541,9 +1545,12 @@ class ActionAStar {
 
     constructor(graph, start, goal, cost_maximum, step_maximum) {
         this._goal = goal;
+        console.log(`ActionAStar constructor starting with ${graph.ActionNodes.length} action nodes`);
         
         const frontier = new PriorityQueue();
+        console.log(`About to enqueue start node`);
         frontier.enqueue(start, 0.0);
+        console.log(`Frontier count after enqueue: ${frontier.count}`);
         
         const startHash = start.getHash();
         this.CameFrom.set(startHash, start); // Key: string hash, Value: node object
@@ -1551,9 +1558,19 @@ class ActionAStar {
         this.StepsSoFar.set(startHash, 0);
         let nodes_explored = 0;
 
+        console.log(`Starting A* loop with frontier count: ${frontier.count}`);
         while (frontier.count > 0) {
             const current = frontier.dequeue();
             nodes_explored++;
+
+            if (nodes_explored % 100 === 0) {
+                console.log(`A* search explored ${nodes_explored} nodes`);
+            }
+
+            if (nodes_explored > 1000) {
+                console.log(`A* search exceeded 1000 nodes, breaking`);
+                break;
+            }
 
             if (this._meets_goal(current, this.CameFrom.get(current.getHash()))) {
                 this.FinalPoint = current;
@@ -1703,10 +1720,12 @@ class ActionAStar {
 class Planner {
     static plan(agent, cost_maximum, step_maximum) {
         Agent.OnPlanningStarted(agent);
+        console.log(`${agent.Name} starting planning with ${agent.Goals.length} goals`);
         let best_plan_utility = 0.0;
         let best_astar = null;
         let best_goal = null;
         for (const goal of agent.Goals) {
+            console.log(`${agent.Name} planning for goal: ${goal.Name}`);
             Agent.OnPlanningStartedForSingleGoal(agent, goal);
             const graph = new ActionGraph(agent.Actions, agent.State);
             const start_node = new ActionNode(null, agent.State, {});
@@ -2328,10 +2347,10 @@ class RpgExampleComparativePygame {
 
         let running = true;
         let turn = 0;
-        let last_update = pygame.time.get_ticks();
+        let last_update = Date.now();
 
         while (running && turn < 600) {
-            const current_time = pygame.time.get_ticks();
+            const current_time = Date.now();
             if (current_time - last_update >= 200) {
                 turn++;
                 console.log(`--- Turn ${turn} ---`);
@@ -2353,12 +2372,6 @@ class RpgExampleComparativePygame {
             }
 
             RpgExampleComparativePygame._render_grid(screen, agents, food_positions);
-            
-            // Small delay to prevent busy waiting
-            // In a real implementation, this would be handled by the game engine
-            // For this demo, we'll add a small synchronous delay
-            const start = Date.now();
-            while (Date.now() - start < 16) {} // ~60 FPS equivalent
         }
 
         console.log("Game finished.");

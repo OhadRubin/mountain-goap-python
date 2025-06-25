@@ -1545,12 +1545,9 @@ class ActionAStar {
 
     constructor(graph, start, goal, cost_maximum, step_maximum) {
         this._goal = goal;
-        console.log(`ActionAStar constructor starting with ${graph.ActionNodes.length} action nodes`);
         
         const frontier = new PriorityQueue();
-        console.log(`About to enqueue start node`);
         frontier.enqueue(start, 0.0);
-        console.log(`Frontier count after enqueue: ${frontier.count}`);
         
         const startHash = start.getHash();
         this.CameFrom.set(startHash, start); // Key: string hash, Value: node object
@@ -1558,17 +1555,11 @@ class ActionAStar {
         this.StepsSoFar.set(startHash, 0);
         let nodes_explored = 0;
 
-        console.log(`Starting A* loop with frontier count: ${frontier.count}`);
         while (frontier.count > 0) {
             const current = frontier.dequeue();
             nodes_explored++;
 
-            if (nodes_explored % 100 === 0) {
-                console.log(`A* search explored ${nodes_explored} nodes`);
-            }
-
             if (nodes_explored > 1000) {
-                console.log(`A* search exceeded 1000 nodes, breaking`);
                 break;
             }
 
@@ -1720,12 +1711,10 @@ class ActionAStar {
 class Planner {
     static plan(agent, cost_maximum, step_maximum) {
         Agent.OnPlanningStarted(agent);
-        console.log(`${agent.Name} starting planning with ${agent.Goals.length} goals`);
         let best_plan_utility = 0.0;
         let best_astar = null;
         let best_goal = null;
         for (const goal of agent.Goals) {
-            console.log(`${agent.Name} planning for goal: ${goal.Name}`);
             Agent.OnPlanningStartedForSingleGoal(agent, goal);
             const graph = new ActionGraph(agent.Actions, agent.State);
             const start_node = new ActionNode(null, agent.State, {});
